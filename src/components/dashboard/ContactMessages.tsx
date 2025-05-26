@@ -54,6 +54,7 @@ import { useFirestore } from '@/hooks/useFirestore';
 import { where, doc, updateDoc, collection, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/useAuth';
 
 // Use Firestore para reclamações, mas mantenha os dados mockados até a implementação completa
 const mockContactMessages = [
@@ -166,6 +167,8 @@ interface ContactMessage {
   date: string;
   type: string;
   status: string;
+  prefixo?: string;
+  historico?: { data: string; quem: string; acao: string; obs?: string }[];
 }
 
 interface ReclamacaoData {
@@ -179,6 +182,7 @@ interface ReclamacaoData {
 
 const ContactMessages = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<ContactMessage[]>(mockContactMessages);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -196,15 +200,15 @@ const ContactMessages = () => {
   });
   
   // Adicione o hook para buscar arquivadas
-  const { data: arquivadasData, loading: isLoadingArquivadas } = useFirestore<ReclamacaoData & { status?: string; dataArquivamento?: any }>(
-    {
-      collectionName: 'reclamacoes-arquivadas',
-      limitCount: 100
-    }
-  );
+  const { data: arquivadasData, loading: isLoadingArquivadas } = useFirestore<
+    ReclamacaoData & { status?: string; dataArquivamento?: any; historico?: { data: string; quem: string; acao: string; obs?: string }[] }
+  >({
+    collectionName: 'reclamacoes-arquivadas',
+    limitCount: 100
+  });
   
   // Estado para modal de arquivada
-  const [selectedArchived, setSelectedArchived] = useState<null | (ReclamacaoData & { status?: string; dataArquivamento?: any })>(null);
+  const [selectedArchived, setSelectedArchived] = useState<null | (ReclamacaoData & { status?: string; dataArquivamento?: any; historico?: { data: string; quem: string; acao: string; obs?: string }[] })>(null);
   
   // Estado para filtro de tipo nas arquivadas
   const [archivedTypeFilter, setArchivedTypeFilter] = useState<string>('todos');
@@ -217,7 +221,7 @@ const ContactMessages = () => {
         let messageType = "outro";
         if (tipo.includes("elogio")) messageType = "elogio";
         else if (tipo.includes("reclama")) messageType = "reclamacao";
-        else if (tipo.includes("dúvida") || tipo.includes("duvida")) messageType = "duvida";
+        else if (tipo.includes("informação") || tipo.includes("informacao")) messageType = "informacao";
         else if (tipo.includes("sugestão") || tipo.includes("sugestao")) messageType = "sugestao";
         return {
           id: item.id,
@@ -227,7 +231,8 @@ const ContactMessages = () => {
           message: item.mensagem || "",
           date: item.dataEnvio instanceof Date ? item.dataEnvio.toISOString() : new Date().toISOString(),
           type: messageType,
-          status: (item as any).status || "pendente"
+          status: (item as any).status || "pendente",
+          prefixo: item.prefixo || "-"
         };
       });
       setMessages(formattedData);
@@ -239,15 +244,29 @@ const ContactMessages = () => {
     setIsDialogOpen(true);
   };
   
+  const addHistorico = async (messageId: string, acao: string, obs: string) => {
+    if (!user) return;
+    const ref = doc(collection(db, 'reclamacoes'), messageId);
+    const snap = await getDoc(ref);
+    let historico = [];
+    if (snap.exists() && snap.data().historico) {
+      historico = snap.data().historico;
+    }
+    historico.push({
+      data: new Date().toISOString(),
+      quem: user.displayName || user.email || 'Usuário',
+      acao,
+      obs
+    });
+    await setDoc(ref, { historico }, { merge: true });
+  };
+  
   const handleStatusChange = async (messageId: string, newStatus: string) => {
-    console.log('Alterando status:', { messageId, newStatus });
     let updateSuccess = false;
     try {
-      // 1. Atualiza ou cria o status no documento original
       const ref = doc(collection(db, 'reclamacoes'), messageId);
       await setDoc(ref, { status: newStatus }, { merge: true });
-      console.log('Status atualizado no Firestore para', messageId);
-      // 2. Se for arquivar, copia para 'reclamacoes-arquivadas'
+      await addHistorico(messageId, `Status alterado para ${newStatus}`, resolucaoObs);
       if (newStatus === 'arquivado') {
         const snap = await getDoc(ref);
         if (snap.exists()) {
@@ -255,16 +274,13 @@ const ContactMessages = () => {
           await setDoc(doc(collection(db, 'reclamacoes-arquivadas'), messageId), {
             ...originalData,
             status: 'arquivado',
-            dataArquivamento: Timestamp.fromDate(new Date())
+            dataArquivamento: Timestamp.fromDate(new Date()),
+            historico: originalData.historico || []
           }, { merge: true });
-          console.log('Documento copiado para reclamacoes-arquivadas:', messageId);
-        } else {
-          console.warn('Documento não encontrado para arquivar:', messageId);
         }
       }
       updateSuccess = true;
     } catch (err) {
-      console.error('Erro ao arquivar:', err);
       toast({
         title: 'Erro ao atualizar status',
         description: err instanceof Error ? err.message : String(err),
@@ -278,12 +294,11 @@ const ContactMessages = () => {
   
   const handleReplyMessage = () => {
     if (selectedMessage) {
-      // Em uma implementação real, isso abriria um formulário de resposta
       toast({
         title: "Resposta enviada",
         description: `Resposta enviada para ${selectedMessage.name} (${selectedMessage.email})`,
       });
-      
+      addHistorico(selectedMessage.id, 'Respondido', resolucaoObs);
       handleStatusChange(selectedMessage.id, 'respondido');
       setIsDialogOpen(false);
     }
@@ -329,7 +344,7 @@ const ContactMessages = () => {
     const pendingCounts = {
       reclamacao: messages.filter(m => m.type === 'reclamacao' && m.status === 'pendente').length,
       elogio: messages.filter(m => m.type === 'elogio' && m.status === 'pendente').length,
-      duvida: messages.filter(m => m.type === 'duvida' && m.status === 'pendente').length,
+      informacao: messages.filter(m => m.type === 'informacao' && m.status === 'pendente').length,
       sugestao: messages.filter(m => m.type === 'sugestao' && m.status === 'pendente').length,
     };
     
@@ -376,11 +391,11 @@ const ContactMessages = () => {
                   )}
                 </TabsTrigger>
                 
-                <TabsTrigger value="duvida" className="flex items-center gap-1">
+                <TabsTrigger value="informacao" className="flex items-center gap-1">
                   <HelpCircle className="h-4 w-4 mr-1" />
-                  Dúvidas
-                  {counts.duvida > 0 && (
-                    <Badge className="ml-1 bg-blue-500 text-white">{counts.duvida}</Badge>
+                  Informações
+                  {counts.informacao > 0 && (
+                    <Badge className="ml-1 bg-blue-500 text-white">{counts.informacao}</Badge>
                   )}
                 </TabsTrigger>
                 
@@ -460,7 +475,7 @@ const ContactMessages = () => {
               </div>
             </div>
             
-            <Table>
+            <Table className="min-w-full overflow-x-auto text-xs sm:text-sm md:text-base" style={{width: '100%'}}>
               <TableHeader>
                 <TableRow>
                   <TableHead>Tipo</TableHead>
@@ -569,7 +584,7 @@ const ContactMessages = () => {
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><X className="h-5 w-5" /> Reclamações Arquivadas</h3>
           {/* Filtros por tipo de reclamação */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {['todos', 'Elogio', 'Reclamação', 'Sugestão', 'Dúvida'].map(tipo => (
+            {['todos', 'Elogio', 'Reclamação', 'Sugestão', 'Informação'].map(tipo => (
               <Button
                 key={tipo}
                 variant={archivedTypeFilter === tipo ? 'default' : 'outline'}
@@ -580,7 +595,7 @@ const ContactMessages = () => {
               </Button>
             ))}
           </div>
-          <Table>
+          <Table className="min-w-full overflow-x-auto text-xs sm:text-sm md:text-base" style={{width: '100%'}}>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
@@ -630,57 +645,51 @@ const ContactMessages = () => {
           </Table>
           {/* Modal de detalhes da arquivada */}
           <Dialog open={!!selectedArchived} onOpenChange={open => !open && setSelectedArchived(null)}>
-            <DialogContent className="w-full max-w-lg sm:max-w-xl md:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto p-2 sm:p-4 md:p-6 rounded-lg shadow-lg">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
                   <X className="h-5 w-5 text-gray-500" />
                   Detalhes da Reclamação Arquivada
                 </DialogTitle>
               </DialogHeader>
-              {selectedArchived && (
-                <div className="space-y-4">
-                  <div>
-                    <span className="font-semibold">Nome:</span> {selectedArchived.nome || '-'}
-                  </div>
-                  <div>
-                    <span className="font-semibold">Tipo:</span> {selectedArchived.tipo || '-'}
-                  </div>
-                  <div>
-                    <span className="font-semibold">E-mail:</span> {selectedArchived.email || '-'}
-                  </div>
-                  <div>
-                    <span className="font-semibold">Telefone:</span> {'telefone' in selectedArchived && typeof (selectedArchived as any).telefone === 'string' ? (selectedArchived as any).telefone || '-' : '-'}
-                  </div>
-                  <div>
-                    <span className="font-semibold">Prefixo:</span> {'prefixo' in selectedArchived && typeof (selectedArchived as any).prefixo === 'string' ? (selectedArchived as any).prefixo || '-' : '-'}
-                  </div>
-                  <div>
-                    <span className="font-semibold">Data da Reclamação:</span> {
-                      selectedArchived.dataEnvio instanceof Date
-                        ? selectedArchived.dataEnvio.toLocaleString('pt-BR')
-                        : (typeof selectedArchived.dataEnvio === 'object' && selectedArchived.dataEnvio && 'toDate' in selectedArchived.dataEnvio && typeof (selectedArchived.dataEnvio as any).toDate === 'function'
-                            ? (selectedArchived.dataEnvio as any).toDate().toLocaleString('pt-BR')
-                            : '-')
-                    }
-                  </div>
-                  <div>
-                    <span className="font-semibold">Data de Arquivamento:</span> {
-                      selectedArchived.dataArquivamento && typeof selectedArchived.dataArquivamento === 'object' && 'toDate' in selectedArchived.dataArquivamento && typeof (selectedArchived.dataArquivamento as any).toDate === 'function'
-                        ? (selectedArchived.dataArquivamento as any).toDate().toLocaleString('pt-BR')
-                        : '-'
-                    }
-                  </div>
-                  <div>
-                    <span className="font-semibold">Status:</span> {selectedArchived.status || 'arquivado'}
-                  </div>
-                  <div>
-                    <span className="font-semibold">Mensagem:</span>
-                    <div className="bg-gray-50 p-3 rounded-md whitespace-pre-wrap mt-1">
-                      {selectedArchived.mensagem || '-'}
-                    </div>
-                  </div>
+              <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base">
+                <div><span className="font-semibold">Nome:</span> {selectedArchived.nome || '-'}</div>
+                <div><span className="font-semibold">Tipo:</span> {selectedArchived.tipo || '-'}</div>
+                <div><span className="font-semibold">E-mail:</span> {selectedArchived.email || '-'}</div>
+                <div><span className="font-semibold">Telefone:</span> {'telefone' in selectedArchived && typeof (selectedArchived as any).telefone === 'string' ? (selectedArchived as any).telefone || '-' : '-'}</div>
+                <div><span className="font-semibold">Prefixo:</span> {'prefixo' in selectedArchived && typeof (selectedArchived as any).prefixo === 'string' ? (selectedArchived as any).prefixo || <span className="text-gray-400">-</span> : <span className="text-gray-400">-</span>}</div>
+                <div><span className="font-semibold">Data da Reclamação:</span> {
+                  selectedArchived.dataEnvio instanceof Date
+                    ? selectedArchived.dataEnvio.toLocaleString('pt-BR')
+                    : (typeof selectedArchived.dataEnvio === 'object' && selectedArchived.dataEnvio && 'toDate' in selectedArchived.dataEnvio && typeof (selectedArchived.dataEnvio as any).toDate === 'function'
+                        ? (selectedArchived.dataEnvio as any).toDate().toLocaleString('pt-BR')
+                        : '-')
+                }</div>
+                <div><span className="font-semibold">Data de Arquivamento:</span> {
+                  selectedArchived.dataArquivamento && typeof selectedArchived.dataArquivamento === 'object' && 'toDate' in selectedArchived.dataArquivamento && typeof (selectedArchived.dataArquivamento as any).toDate === 'function'
+                    ? (selectedArchived.dataArquivamento as any).toDate().toLocaleString('pt-BR')
+                    : '-'
+                }</div>
+                <div><span className="font-semibold">Status:</span> {selectedArchived.status || 'arquivado'}</div>
+                <div>
+                  <span className="font-semibold">Mensagem:</span>
+                  <div className="bg-gray-50 p-3 rounded-md whitespace-pre-wrap mt-1">{selectedArchived.mensagem || '-'}</div>
                 </div>
-              )}
+                <div className="mt-4 border-t pt-3">
+                  <span className="font-semibold">Histórico de Ações:</span>
+                  {selectedArchived.historico && selectedArchived.historico.length > 0 ? (
+                    <ul className="bg-gray-50 p-2 rounded-md mt-1 text-xs">
+                      {selectedArchived.historico.map((h, idx) => (
+                        <li key={idx} className="mb-1">
+                          <b>{h.data && new Date(h.data).toLocaleString('pt-BR')}</b> - <b>{h.quem}</b>: {h.acao} {h.obs && `- ${h.obs}`}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-gray-400 text-xs mt-1">Nenhuma ação registrada.</div>
+                  )}
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
@@ -688,9 +697,9 @@ const ContactMessages = () => {
       
       {selectedMessage && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="w-full max-w-lg sm:max-w-xl md:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto p-2 sm:p-4 md:p-6 rounded-lg shadow-lg">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
                 {getTypeLabel(selectedMessage.type).icon}
                 {selectedMessage.subject}
               </DialogTitle>
@@ -715,20 +724,29 @@ const ContactMessages = () => {
                 </div>
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base">
+              <div><span className="font-semibold">De:</span> {selectedMessage.name} &lt;{selectedMessage.email}&gt;</div>
+              <div><span className="font-semibold">Data:</span> {new Date(selectedMessage.date).toLocaleString('pt-BR')}</div>
+              <div><span className="font-semibold">Prefixo:</span> {selectedMessage.prefixo ?? <span className="text-gray-400">-</span>}</div>
               <div>
-                <p className="text-sm font-medium mb-1">De:</p>
-                <p>{selectedMessage.name} &lt;{selectedMessage.email}&gt;</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Data:</p>
-                <p>{new Date(selectedMessage.date).toLocaleString('pt-BR')}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Mensagem:</p>
+                <span className="font-semibold">Mensagem:</span>
                 <div className="bg-gray-50 p-3 rounded-md whitespace-pre-wrap">
                   <p>{selectedMessage.message}</p>
                 </div>
+              </div>
+              <div className="mt-4 border-t pt-3">
+                <span className="font-semibold">Histórico de Ações:</span>
+                {selectedMessage.historico && selectedMessage.historico.length > 0 ? (
+                  <ul className="bg-gray-50 p-2 rounded-md mt-1 text-xs">
+                    {selectedMessage.historico.map((h, idx) => (
+                      <li key={idx} className="mb-1">
+                        <b>{h.data && new Date(h.data).toLocaleString('pt-BR')}</b> - <b>{h.quem}</b>: {h.acao} {h.obs && `- ${h.obs}`}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-gray-400 text-xs mt-1">Nenhuma ação registrada.</div>
+                )}
               </div>
               {/* Botões de resposta */}
               <div className="flex flex-col sm:flex-row gap-2 mt-4">
