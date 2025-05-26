@@ -366,54 +366,56 @@ const ContactMessages = () => {
         </CardHeader>
         <CardContent>
           <div className="max-h-[60vh] overflow-y-auto pr-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-              <TabsList className="grid grid-cols-6 mb-4">
-                <TabsTrigger value="todos" className="flex items-center gap-1">
-                  Todos
-                  {counts.totalPending > 0 && (
-                    <Badge className="ml-1 bg-yellow-500 text-white">{counts.totalPending}</Badge>
-                  )}
-                </TabsTrigger>
-                
-                <TabsTrigger value="reclamacao" className="flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4 mr-1" />
-                  Reclamações
-                  {counts.reclamacao > 0 && (
-                    <Badge className="ml-1 bg-red-500 text-white">{counts.reclamacao}</Badge>
-                  )}
-                </TabsTrigger>
-                
-                <TabsTrigger value="elogio" className="flex items-center gap-1">
-                  <Star className="h-4 w-4 mr-1" />
-                  Elogios
-                  {counts.elogio > 0 && (
-                    <Badge className="ml-1 bg-green-500 text-white">{counts.elogio}</Badge>
-                  )}
-                </TabsTrigger>
-                
-                <TabsTrigger value="informacao" className="flex items-center gap-1">
-                  <HelpCircle className="h-4 w-4 mr-1" />
-                  Informações
-                  {counts.informacao > 0 && (
-                    <Badge className="ml-1 bg-blue-500 text-white">{counts.informacao}</Badge>
-                  )}
-                </TabsTrigger>
-                
-                <TabsTrigger value="sugestao" className="flex items-center gap-1">
-                  <Lightbulb className="h-4 w-4 mr-1" />
-                  Sugestões
-                  {counts.sugestao > 0 && (
-                    <Badge className="ml-1 bg-purple-500 text-white">{counts.sugestao}</Badge>
-                  )}
-                </TabsTrigger>
-                
-                <TabsTrigger value="arquivadas" className="flex items-center gap-1">
-                  <X className="h-4 w-4 mr-1" />
-                  Arquivadas
-                  <Badge className="ml-1 bg-gray-500 text-white">{messages.filter(m => m.status === 'arquivado' && m.type === 'reclamacao').length}</Badge>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="w-full overflow-x-auto">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
+                <TabsList className="flex flex-nowrap gap-2 min-w-max mb-4">
+                  <TabsTrigger value="todos" className="flex items-center gap-1">
+                    Todos
+                    {counts.totalPending > 0 && (
+                      <Badge className="ml-1 bg-yellow-500 text-white">{counts.totalPending}</Badge>
+                    )}
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="reclamacao" className="flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    Reclamações
+                    {counts.reclamacao > 0 && (
+                      <Badge className="ml-1 bg-red-500 text-white">{counts.reclamacao}</Badge>
+                    )}
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="elogio" className="flex items-center gap-1">
+                    <Star className="h-4 w-4 mr-1" />
+                    Elogios
+                    {counts.elogio > 0 && (
+                      <Badge className="ml-1 bg-green-500 text-white">{counts.elogio}</Badge>
+                    )}
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="informacao" className="flex items-center gap-1">
+                    <HelpCircle className="h-4 w-4 mr-1" />
+                    Informações
+                    {counts.informacao > 0 && (
+                      <Badge className="ml-1 bg-blue-500 text-white">{counts.informacao}</Badge>
+                    )}
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="sugestao" className="flex items-center gap-1">
+                    <Lightbulb className="h-4 w-4 mr-1" />
+                    Sugestões
+                    {counts.sugestao > 0 && (
+                      <Badge className="ml-1 bg-purple-500 text-white">{counts.sugestao}</Badge>
+                    )}
+                  </TabsTrigger>
+                  
+                  <TabsTrigger value="arquivadas" className="flex items-center gap-1">
+                    <X className="h-4 w-4 mr-1" />
+                    Arquivadas
+                    <Badge className="ml-1 bg-gray-500 text-white">{messages.filter(m => m.status === 'arquivado' && m.type === 'reclamacao').length}</Badge>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
             
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="relative flex-1">
