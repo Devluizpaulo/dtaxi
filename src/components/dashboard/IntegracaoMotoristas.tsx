@@ -6,6 +6,8 @@ import { db } from '@/lib/firebase';
 import * as XLSX from 'xlsx';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface Turma {
   id: string;
@@ -196,6 +198,21 @@ export default function IntegracaoMotoristas() {
 
     try {
       setIsImporting(true);
+      // 1. Upload do arquivo para o Storage
+      const fileRef = ref(storage, `uploads/${turmaSelecionada.id}/${file.name}`);
+      await uploadBytes(fileRef, file);
+      const fileUrl = await getDownloadURL(fileRef);
+
+      // 2. Salvar metadados do upload no Firestore
+      const uploadDocRef = await addDoc(collection(db, 'uploads'), {
+        turmaId: turmaSelecionada.id,
+        fileUrl,
+        fileName: file.name,
+        uploadedAt: Timestamp.now(),
+        // Adicione aqui o usuário autenticado se desejar (ex: uploadedBy: user.uid)
+      });
+
+      // 3. Ler e importar linhas do Excel como subcoleção
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -223,8 +240,20 @@ export default function IntegracaoMotoristas() {
           continue;
         }
 
+        // Salvar cada linha como documento na subcoleção 'linhas' do upload
+        const linhaDoc = await addDoc(collection(db, 'uploads', uploadDocRef.id, 'linhas'), {
+          nome: row['NOME']?.trim() || '',
+          unidade: row['UN']?.toString() || '',
+          placa,
+          modelo: row['MODELO']?.trim() || '',
+          telefone,
+          turmaId: turmaSelecionada.id,
+          prefixo: row['UN']?.toString() || '',
+          importadoEm: Timestamp.now(),
+        });
+
         newMotoristas.push({
-          id: `${turmaSelecionada.id}-${placa || Date.now()}`,
+          id: linhaDoc.id,
           nome: row['NOME']?.trim() || '',
           unidade: row['UN']?.toString() || '',
           placa,
@@ -243,23 +272,16 @@ export default function IntegracaoMotoristas() {
         });
       }
 
-      // Salvar novos motoristas no banco
-      const motoristasComIdFirestore: Motorista[] = [];
-      for (const motorista of newMotoristas) {
-        const docRef = await addDoc(collection(db, 'motoristas-integracao'), motorista);
-        motoristasComIdFirestore.push({ ...motorista, id: docRef.id });
-      }
-
       // Atualizar contadores da turma
       const turmaRef = doc(db, 'turmas-integracao', turmaSelecionada.id);
       await updateDoc(turmaRef, {
-        totalMotoristas: motoristas.length + motoristasComIdFirestore.length
+        totalMotoristas: motoristas.length + newMotoristas.length
       });
 
-      setMotoristas(prev => [...prev, ...motoristasComIdFirestore]);
+      setMotoristas(prev => [...prev, ...newMotoristas]);
       toast({
         title: "Lista importada com sucesso!",
-        description: `${motoristasComIdFirestore.length} motoristas importados para a turma.`
+        description: `${newMotoristas.length} motoristas importados para a turma. Arquivo salvo para auditoria.`
       });
     } catch (error) {
       toast({
