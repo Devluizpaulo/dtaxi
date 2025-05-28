@@ -20,6 +20,7 @@ import AtaFormModal from './coordination/AtaFormModal';
 import RelatorioOcorrenciaFormModal from './coordination/RelatorioOcorrenciaFormModal';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useAuth } from '@/hooks/useAuth';
+import IntegracaoMotoristas from './IntegracaoMotoristas';
 
 const tiposDocumento = [
   'Ata de Comissão de Ética',
@@ -119,7 +120,7 @@ const Coordination = () => {
       </div>
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList
-          className="mb-4 overflow-x-auto whitespace-nowrap flex gap-2 sm:grid sm:grid-cols-5 scrollbar-hide"
+          className="mb-4 overflow-x-auto whitespace-nowrap flex gap-2 sm:grid sm:grid-cols-6 scrollbar-hide"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <TabsTrigger value="coordenadores">Coordenadores</TabsTrigger>
@@ -127,6 +128,7 @@ const Coordination = () => {
           <TabsTrigger value="comunicados">Comunicados</TabsTrigger>
           <TabsTrigger value="portarias">Portarias</TabsTrigger>
           <TabsTrigger value="modelos-documentos">Modelos de Documentos</TabsTrigger>
+          <TabsTrigger value="integracao">Integração</TabsTrigger>
         </TabsList>
         {/* Coordenadores */}
         <TabsContent value="coordenadores" className="space-y-4 px-1 sm:px-0">
@@ -287,7 +289,6 @@ const Coordination = () => {
           />
           )}
         </TabsContent>
-        {/* Comunicados */}
         <TabsContent value="comunicados" className="space-y-4 px-1 sm:px-0">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -337,7 +338,6 @@ const Coordination = () => {
             onCancel={() => { setShowComModal(false); setComEdit(null); }}
           />
         </TabsContent>
-        {/* Portarias */}
         <TabsContent value="portarias" className="space-y-4 px-1 sm:px-0">
           <PortariasList
             documentos={portarias}
@@ -389,7 +389,6 @@ const Coordination = () => {
             </div>
           )}
         </TabsContent>
-        {/* Modelos de Documentos */}
         <TabsContent value="modelos-documentos" className="space-y-4 px-1 sm:px-0">
           <Card>
             <CardHeader>
@@ -398,6 +397,19 @@ const Coordination = () => {
             </CardHeader>
             <CardContent>
               <ModelosDocumentosList modelos={modelosProntos} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Nova aba de Integração */}
+        <TabsContent value="integracao" className="space-y-4 px-1 sm:px-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integração de Motoristas</CardTitle>
+              <CardDescription>Gerencie as integrações obrigatórias dos motoristas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <IntegracaoMotoristas />
             </CardContent>
           </Card>
         </TabsContent>

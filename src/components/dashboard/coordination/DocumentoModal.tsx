@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { X } from 'lucide-react';
 import { Documento } from "./types";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import 'quill-emoji/dist/quill-emoji.css';
 
 interface DocumentoModalProps {
   tipo: string;
@@ -62,6 +65,24 @@ const camposIniciais = (tipo: string, doc?: Documento | null) => {
       descricao: doc?.descricao || '',
     };
   }
+};
+
+const modules = {
+  toolbar: [
+    [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    [{ 'indent': '-1'}, { 'indent': '+1' }],
+    ['blockquote', 'code-block'],
+    ['link', 'image', 'video'],
+    ['emoji'],
+    ['clean'],
+  ],
+  'emoji-toolbar': true,
+  'emoji-textarea': false,
+  'emoji-shortname': true,
 };
 
 const DocumentoModal: React.FC<DocumentoModalProps> = ({ tipo, documento, open, loading, onSave, onCancel }) => {
@@ -125,7 +146,7 @@ const DocumentoModal: React.FC<DocumentoModalProps> = ({ tipo, documento, open, 
                 </label>
                 <label className="block">
                 <span className="text-sm font-semibold text-taxi-green">Conteúdo da Portaria</span>
-                <textarea name="conteudo" value={fields.conteudo} onChange={handleChange} required rows={8} className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 font-mono focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition resize-none" />
+                <ReactQuill value={fields.conteudo} onChange={(value) => setFields((f: any) => ({ ...f, conteudo: value }))} modules={modules} />
                 </label>
                 <label className="block">
                 <span className="text-sm font-semibold text-taxi-green">Link de Origem</span>

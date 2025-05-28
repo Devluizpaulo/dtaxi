@@ -51,7 +51,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/hooks/useFirestore';
-import { where, doc, updateDoc, collection, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { where, doc, updateDoc, collection, getDoc, setDoc, Timestamp, deleteDoc } from 'firebase/firestore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
@@ -178,6 +178,7 @@ interface ReclamacaoData {
   mensagem: string;
   dataEnvio: Date;
   email?: string;
+  prefixo?: string;
 }
 
 const ContactMessages = () => {
@@ -232,7 +233,7 @@ const ContactMessages = () => {
           date: item.dataEnvio instanceof Date ? item.dataEnvio.toISOString() : new Date().toISOString(),
           type: messageType,
           status: (item as any).status || "pendente",
-          prefixo: item.prefixo || "-"
+          prefixo: (item as any).prefixo || undefined
         };
       });
       setMessages(formattedData);
@@ -277,6 +278,8 @@ const ContactMessages = () => {
             dataArquivamento: Timestamp.fromDate(new Date()),
             historico: originalData.historico || []
           }, { merge: true });
+          await deleteDoc(ref);
+          setMessages(prev => prev.filter(msg => msg.id !== messageId));
         }
       }
       updateSuccess = true;
@@ -287,7 +290,7 @@ const ContactMessages = () => {
         variant: 'destructive',
       });
     }
-    if (updateSuccess) {
+    if (updateSuccess && newStatus !== 'arquivado') {
       window.location.reload();
     }
   };
@@ -655,11 +658,12 @@ const ContactMessages = () => {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base">
+                {selectedArchived ? <>
                 <div><span className="font-semibold">Nome:</span> {selectedArchived.nome || '-'}</div>
                 <div><span className="font-semibold">Tipo:</span> {selectedArchived.tipo || '-'}</div>
                 <div><span className="font-semibold">E-mail:</span> {selectedArchived.email || '-'}</div>
                 <div><span className="font-semibold">Telefone:</span> {'telefone' in selectedArchived && typeof (selectedArchived as any).telefone === 'string' ? (selectedArchived as any).telefone || '-' : '-'}</div>
-                <div><span className="font-semibold">Prefixo:</span> {'prefixo' in selectedArchived && typeof (selectedArchived as any).prefixo === 'string' ? (selectedArchived as any).prefixo || <span className="text-gray-400">-</span> : <span className="text-gray-400">-</span>}</div>
+                <div><span className="font-semibold">Prefixo:</span> {selectedArchived && selectedArchived.prefixo ? selectedArchived.prefixo : <span className="text-gray-400">-</span>}</div>
                 <div><span className="font-semibold">Data da Reclamação:</span> {
                   selectedArchived.dataEnvio instanceof Date
                     ? selectedArchived.dataEnvio.toLocaleString('pt-BR')
@@ -691,6 +695,7 @@ const ContactMessages = () => {
                     <div className="text-gray-400 text-xs mt-1">Nenhuma ação registrada.</div>
                   )}
                 </div>
+                </> : null}
               </div>
             </DialogContent>
           </Dialog>

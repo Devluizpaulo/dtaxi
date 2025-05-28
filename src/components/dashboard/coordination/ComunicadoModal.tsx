@@ -2,6 +2,9 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { X } from 'lucide-react';
 import { Comunicado } from "./types";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import 'quill-emoji/dist/quill-emoji.css';
 
 interface ComunicadoModalProps {
   comunicado?: Comunicado | null;
@@ -10,6 +13,24 @@ interface ComunicadoModalProps {
   onSave: (com: Comunicado) => Promise<void>;
   onCancel: () => void;
 }
+
+const modules = {
+  toolbar: [
+    [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    [{ 'indent': '-1'}, { 'indent': '+1' }],
+    ['blockquote', 'code-block'],
+    ['link', 'image', 'video'],
+    ['emoji'],
+    ['clean'],
+  ],
+  'emoji-toolbar': true,
+  'emoji-textarea': false,
+  'emoji-shortname': true,
+};
 
 /**
  * Modal de formulário para criação/edição de comunicados.
@@ -56,14 +77,10 @@ const ComunicadoModal: React.FC<ComunicadoModalProps> = ({ comunicado, open, loa
               />
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-taxi-green">Mensagem</span>
-              <textarea
-                name="mensagem"
-                defaultValue={comunicado?.mensagem}
-                required
-                rows={4}
-                className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition resize-none"
-              />
+              <span className="text-sm font-semibold text-taxi-green">Conteúdo do Comunicado</span>
+              <ReactQuill value={comunicado?.mensagem} onChange={(value) => {
+                // Handle the change in the mensagem field
+              }} modules={modules} />
             </label>
             <div className="flex flex-col sm:flex-row gap-4">
               <label className="flex-1">

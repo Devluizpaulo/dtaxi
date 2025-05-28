@@ -27,30 +27,34 @@ const historyEvents = [
   },
   {
     year: "2009",
-    title: "Táxis Acessíveis",
-    description: "Introduzimos os primeiros táxis acessíveis, com 70 carros adaptados, revolucionando o setor.",
-    icon: <Users className="w-8 h-8 text-orange-200" />, color: "from-orange-400 to-orange-600",
+    title: "Pioneirismo em Acessibilidade",
+    description: "Fomos os primeiros a introduzir táxis acessíveis na cidade de São Paulo, com 70 veículos adaptados, promovendo inclusão e transformando a mobilidade urbana.",
+    icon: <Users className="w-8 h-8 text-orange-200" />,
+    color: "from-orange-400 to-orange-600",
     image: img2009
   },
   {
     year: "2012-2013",
-    title: "Inovação Elétrica e Híbrida",
-    description: "Primeiros táxis elétricos (2012) e, em 2013, 150 híbridos 0KM e o dobro de táxis acessíveis, iniciando contrato com a ATENDE.",
-    icon: <Zap className="w-8 h-8 text-green-200" />, color: "from-green-400 to-blue-400",
+    title: "Inovação e Sustentabilidade",
+    description: "Iniciamos os primeiros táxis elétricos em 2012. Em 2013, implementamos a maior frota sustentável do Brasil com 150 híbridos 0KM e dobramos o número de táxis acessíveis, marcando o início do contrato com o serviço ATENDE.",
+    icon: <Zap className="w-8 h-8 text-green-200" />,
+    color: "from-green-400 to-blue-400",
     image: img2013
   },
   {
     year: "2018",
     title: "Nascimento da D-TAXI",
-    description: "Gestão profissional, motoristas treinados e uniformizados, operação no aeroporto de Congonhas com mais de 250 táxis limpos.",
-    icon: <Rocket className="w-8 h-8 text-blue-200" />, color: "from-blue-400 to-green-400",
+    description: "Surge a D-TAXI: uma nova era de gestão profissional, com motoristas treinados e uniformizados. Iniciamos operações no Aeroporto de Congonhas com mais de 250 táxis movidos a energia limpa, reafirmando nosso compromisso com qualidade, sustentabilidade e excelência no atendimento.",
+    icon: <Rocket className="w-8 h-8 text-blue-200" />,
+    color: "from-blue-400 to-green-400",
     image: img2018
   },
   {
     year: "2018-2024",
     title: "Liderança e Sustentabilidade",
-    description: "15 milhões de passageiros, 14.040 toneladas de CO₂ evitadas, cerca de 3.500 corridas diárias só no aeroporto.",
-    icon: <Star className="w-8 h-8 text-yellow-200" />, color: "from-yellow-400 to-green-400",
+    description: "Nos tornamos referência nacional em atendimento qualificado e mobilidade sustentável. Com mais de 15 milhões de passageiros atendidos, evitamos 14.040 toneladas de CO₂ e realizamos cerca de 3.500 corridas diárias apenas no Aeroporto de Congonhas. Hoje, somos o maior ponto de táxis híbridos do Brasil.",
+    icon: <Star className="w-8 h-8 text-yellow-200" />,
+    color: "from-yellow-400 to-green-400",
     image: img2024
   },
 ];

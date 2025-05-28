@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star, MessageSquare } from 'lucide-react';
+import { Star, MessageSquare, BarChart2, PlusCircle, FileText, Settings, Download, HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { collection, query, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface Avaliacao {
   id: string;
@@ -151,13 +153,37 @@ const MensagemCard: React.FC<{ mensagem: Mensagem }> = ({ mensagem }) => (
 const DashboardOverview = () => {
   const { avaliacoes, media, loading: loadingAval, error: errorAval } = useAvaliacoes();
   const { mensagens, loading: loadingMsg, error: errorMsg } = useMensagens();
+  const navigate = useNavigate();
+
+  // Exemplo de dados para gráfico de evolução da média (mock)
+  const mediaHistorico = [4.2, 4.4, 4.5, 4.6, 4.7, 4.5, 4.8];
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Atalhos rápidos */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Button variant="secondary" className="flex flex-col items-center gap-1 py-6" onClick={() => navigate('/dashboard/satisfacao')}>
+          <PlusCircle className="h-7 w-7 mb-1 text-taxi-green" />
+          Nova Avaliação
+        </Button>
+        <Button variant="secondary" className="flex flex-col items-center gap-1 py-6" onClick={() => navigate('/dashboard/mensagens')}>
+          <PlusCircle className="h-7 w-7 mb-1 text-taxi-yellow" />
+          Nova Mensagem
+        </Button>
+        <Button variant="secondary" className="flex flex-col items-center gap-1 py-6" onClick={() => navigate('/dashboard/satisfacao')}>
+          <FileText className="h-7 w-7 mb-1 text-blue-500" />
+          Relatório
+        </Button>
+        <Button variant="secondary" className="flex flex-col items-center gap-1 py-6" onClick={() => navigate('/dashboard/configuracoes')}>
+          <Settings className="h-7 w-7 mb-1 text-gray-500" />
+          Configurações
+        </Button>
+      </div>
+      {/* Cards principais */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Card de Avaliações */}
-        <Card>
+        <Card className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle>Avaliações de Satisfação</CardTitle>
             <CardDescription>Últimas avaliações dos usuários</CardDescription>
@@ -168,7 +194,7 @@ const DashboardOverview = () => {
                 <div className="flex items-center gap-2">
                   <Star className="h-5 w-5 text-yellow-400" />
                   <span className="text-2xl font-bold">{media.toFixed(1)}</span>
-                  </div>
+                </div>
                 <div className="text-sm text-muted-foreground">
                   Média geral de satisfação
                 </div>
@@ -190,7 +216,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
         {/* Card de Mensagens */}
-        <Card>
+        <Card className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle>Últimas Mensagens</CardTitle>
             <CardDescription>Mensagens mais recentes</CardDescription>
@@ -211,6 +237,49 @@ const DashboardOverview = () => {
             </div>
           </CardContent>
         </Card>
+        {/* Card de Gráfico de evolução da média */}
+        <Card className="col-span-1 flex flex-col justify-between">
+          <CardHeader className="pb-2">
+            <CardTitle>Evolução da Média</CardTitle>
+            <CardDescription>Últimos 7 períodos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center h-full">
+              {/* Gráfico de barras simples (mock) */}
+              <div className="flex items-end gap-1 h-24 w-full max-w-xs mx-auto">
+                {mediaHistorico.map((valor, idx) => (
+                  <div key={idx} className="flex flex-col items-center justify-end h-full">
+                    <div
+                      className="bg-taxi-green rounded-t-md"
+                      style={{ height: `${valor * 20}px`, width: '18px', minHeight: '8px' }}
+                      title={`Média: ${valor}`}
+                    ></div>
+                    <span className="text-xs text-muted-foreground mt-1">{valor.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {/* Ferramentas rápidas */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+        <Button variant="outline" className="flex items-center gap-2 justify-center py-6" onClick={() => alert('Exportar dados!')}>
+          <Download className="h-6 w-6 text-blue-500" /> Exportar Dados
+        </Button>
+        <Button variant="outline" className="flex items-center gap-2 justify-center py-6" onClick={() => alert('Gerar PDF!')}>
+          <FileText className="h-6 w-6 text-taxi-green" /> Gerar Relatório PDF
+        </Button>
+        <Button variant="outline" className="flex items-center gap-2 justify-center py-6" onClick={() => alert('Acessar suporte!')}>
+          <HelpCircle className="h-6 w-6 text-yellow-500" /> Suporte
+        </Button>
+      </div>
+      {/* Links rápidos extras */}
+      <div className="flex flex-wrap gap-4 mt-6">
+        <Button variant="outline" onClick={() => navigate('/dashboard/satisfacao')}>Ver todas as avaliações</Button>
+        <Button variant="outline" onClick={() => navigate('/dashboard/mensagens')}>Ver todas as mensagens</Button>
+        <Button variant="default" onClick={() => navigate('/dashboard/mensagens?status=pendente')}>Reclamações Pendentes</Button>
+        <Button variant="default" onClick={() => navigate('/dashboard/satisfacao')}>Relatório de Satisfação</Button>
       </div>
     </div>
   );
