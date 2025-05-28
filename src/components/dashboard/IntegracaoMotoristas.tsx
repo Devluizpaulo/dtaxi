@@ -244,20 +244,22 @@ export default function IntegracaoMotoristas() {
       }
 
       // Salvar novos motoristas no banco
+      const motoristasComIdFirestore: Motorista[] = [];
       for (const motorista of newMotoristas) {
-        await addDoc(collection(db, 'motoristas-integracao'), motorista);
+        const docRef = await addDoc(collection(db, 'motoristas-integracao'), motorista);
+        motoristasComIdFirestore.push({ ...motorista, id: docRef.id });
       }
 
       // Atualizar contadores da turma
       const turmaRef = doc(db, 'turmas-integracao', turmaSelecionada.id);
       await updateDoc(turmaRef, {
-        totalMotoristas: motoristas.length + newMotoristas.length
+        totalMotoristas: motoristas.length + motoristasComIdFirestore.length
       });
 
-      setMotoristas(prev => [...prev, ...newMotoristas]);
+      setMotoristas(prev => [...prev, ...motoristasComIdFirestore]);
       toast({
         title: "Lista importada com sucesso!",
-        description: `${newMotoristas.length} motoristas importados para a turma.`
+        description: `${motoristasComIdFirestore.length} motoristas importados para a turma.`
       });
     } catch (error) {
       toast({
