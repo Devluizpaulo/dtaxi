@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import SelectTurma from "./SelectTurma";
-import UploadExcel from "./UploadExcel";
+import ModalAdicionarMotorista from "./ModalAdicionarMotorista";
 import ListaMotoristas from "./ListaMotoristas";
 import ResumoTurma from "./ResumoTurma";
 import { Turma, Motorista } from "./types";
@@ -9,6 +9,7 @@ const IntegracaoMotoristas: React.FC = () => {
   const [turmaSelecionada, setTurmaSelecionada] = useState<Turma | null>(null);
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
   const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <div className="p-4 max-w-5xl mx-auto space-y-6">
@@ -21,10 +22,17 @@ const IntegracaoMotoristas: React.FC = () => {
       />
       {turmaSelecionada && (
         <>
-          <UploadExcel
+          <button
+            className="btn btn-success mb-2 w-full sm:w-auto"
+            onClick={() => setModalOpen(true)}
+          >
+            + Adicionar Motorista
+          </button>
+          <ModalAdicionarMotorista
             turma={turmaSelecionada}
-            setMotoristas={setMotoristas}
-            setLoading={setLoading}
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onAdicionado={motorista => setMotoristas(prev => [...prev, motorista])}
           />
           <ResumoTurma motoristas={motoristas} />
           <ListaMotoristas
