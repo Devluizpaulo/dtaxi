@@ -20,7 +20,7 @@ import AtaFormModal from './coordination/AtaFormModal';
 import RelatorioOcorrenciaFormModal from './coordination/RelatorioOcorrenciaFormModal';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useAuth } from '@/hooks/useAuth';
-import IntegracaoMotoristas from './IntegracaoMotoristas';
+import IntegracaoMotoristas from '@/components/integracao/IntegracaoMotoristas';
 
 const tiposDocumento = [
   'Ata de Comissão de Ética',
