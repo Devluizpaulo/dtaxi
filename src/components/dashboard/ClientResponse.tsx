@@ -1,78 +1,85 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from "@/hooks/use-toast";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SendHorizontal, Mail, Phone } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface Feedback {
+  name: string;
+  email: string;
+  telefone?: string;
+  contact?: string;
+  type: 'elogio' | 'reclamacao' | 'duvida' | 'sugestao' | string;
+}
 
 interface ClientResponseProps {
-  feedback: any;
+  feedback: Feedback;
   onClose: () => void;
 }
 
-const ClientResponse = ({ feedback, onClose }: ClientResponseProps) => {
+const ClientResponse: React.FC<ClientResponseProps> = ({ feedback, onClose }) => {
   const { toast } = useToast();
-  const [responseMethod, setResponseMethod] = useState('email');
+  const [responseMethod, setResponseMethod] = useState<'email' | 'whatsapp'>('email');
   const [responseText, setResponseText] = useState('');
   const [sending, setSending] = useState(false);
-  
-  const getDefaultResponse = () => {
-    if (feedback.type === 'elogio') {
-      return `Prezado(a) ${feedback.name},\n\nObrigado pelo seu feedback positivo! Estamos felizes em saber que você teve uma boa experiência com a D-TAXI.\n\nAgradecemos sua preferência e esperamos poder atendê-lo(a) novamente em breve.\n\nAtenciosamente,\nEquipe D-TAXI`;
-    } else if (feedback.type === 'reclamacao') {
-      return `Prezado(a) ${feedback.name},\n\nAgradecemos por nos informar sobre sua experiência. Lamentamos o ocorrido e gostaríamos de assegurar que estamos investigando a situação para garantir que isso não se repita.\n\nSeu feedback é muito importante para nós e nos ajuda a melhorar nossos serviços.\n\nSe tiver qualquer dúvida adicional, não hesite em nos contatar.\n\nAtenciosamente,\nEquipe D-TAXI`;
-    } else {
-      return `Prezado(a) ${feedback.name},\n\nObrigado por entrar em contato com a D-TAXI.\n\nEstamos analisando sua mensagem e retornaremos o mais breve possível com as informações solicitadas.\n\nAgradecemos sua preferência.\n\nAtenciosamente,\nEquipe D-TAXI`;
+
+  useEffect(() => {
+    setResponseText(generateDefaultResponse(feedback));
+  }, [feedback]);
+
+  const generateDefaultResponse = (feedback: Feedback): string => {
+    const greeting = `Prezado(a) ${feedback.name},`;
+    const closing = `\n\nAtenciosamente,\nEquipe D-TAXI`;
+
+    switch (feedback.type) {
+      case 'elogio':
+        return `${greeting}\n\nObrigado pelo seu feedback positivo! Estamos felizes em saber que você teve uma boa experiência com a D-TAXI.\n\nAgradecemos sua preferência e esperamos poder atendê-lo(a) novamente em breve.${closing}`;
+      case 'reclamacao':
+        return `${greeting}\n\nAgradecemos por nos informar sobre sua experiência. Lamentamos o ocorrido e estamos investigando a situação para garantir que isso não se repita.\n\nSeu feedback é muito importante para nós.${closing}`;
+      default:
+        return `${greeting}\n\nObrigado por entrar em contato com a D-TAXI.\n\nEstamos analisando sua mensagem e responderemos o mais breve possível.${closing}`;
     }
   };
-  
-  React.useEffect(() => {
-    setResponseText(getDefaultResponse());
-  }, [feedback]);
-  
+
   const handleSendResponse = async () => {
     if (!responseText.trim()) {
       toast({
-        title: "Mensagem vazia",
-        description: "Por favor, insira um texto para a resposta.",
-        variant: "destructive",
+        title: 'Mensagem vazia',
+        description: 'Por favor, insira um texto para a resposta.',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     setSending(true);
-    
-    // Em uma aplicação real, aqui você enviaria a resposta via email ou SMS
-    // usando uma função do Firebase ou outra API
-    
+
     try {
-      // Simulando o envio com um timeout
+      // TODO: Implementar envio real via backend/API/Firebase
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       toast({
-        title: "Resposta enviada",
-        description: `Sua resposta foi enviada com sucesso para ${feedback.name} via ${responseMethod === 'email' ? 'e-mail' : 'SMS/WhatsApp'}.`,
+        title: 'Resposta enviada',
+        description: `Sua resposta foi enviada para ${feedback.name} via ${responseMethod === 'email' ? 'e-mail' : 'WhatsApp/SMS'}.`,
       });
-      
       onClose();
     } catch (error) {
-      console.error("Erro ao enviar resposta:", error);
+      console.error('Erro ao enviar resposta:', error);
       toast({
-        title: "Erro ao enviar",
-        description: "Ocorreu um erro ao tentar enviar a resposta. Por favor, tente novamente.",
-        variant: "destructive",
+        title: 'Erro ao enviar',
+        description: 'Não foi possível enviar a resposta. Tente novamente.',
+        variant: 'destructive',
       });
     } finally {
       setSending(false);
     }
   };
-  
+
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <div className="space-y-6">
+      <section className="space-y-2">
         <Label>Detalhes do Cliente</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div className="flex items-center gap-2 p-2 border rounded-md">
@@ -81,14 +88,14 @@ const ClientResponse = ({ feedback, onClose }: ClientResponseProps) => {
           </div>
           <div className="flex items-center gap-2 p-2 border rounded-md">
             <Phone className="h-4 w-4 text-gray-500" />
-            <span className="text-sm truncate">{feedback.contact || feedback.telefone}</span>
+            <span className="text-sm truncate">{feedback.telefone ?? feedback.contact ?? 'Não informado'}</span>
           </div>
         </div>
-      </div>
-      
-      <div className="space-y-2">
+      </section>
+
+      <section className="space-y-2">
         <Label>Método de Resposta</Label>
-        <Select value={responseMethod} onValueChange={setResponseMethod}>
+        <Select value={responseMethod} onValueChange={(v) => setResponseMethod(v as 'email' | 'whatsapp')}>
           <SelectTrigger>
             <SelectValue placeholder="Escolha o método de resposta" />
           </SelectTrigger>
@@ -97,9 +104,9 @@ const ClientResponse = ({ feedback, onClose }: ClientResponseProps) => {
             <SelectItem value="whatsapp">WhatsApp/SMS</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      
-      <div className="space-y-2">
+      </section>
+
+      <section className="space-y-2">
         <Label>Mensagem</Label>
         <Textarea
           value={responseText}
@@ -107,17 +114,17 @@ const ClientResponse = ({ feedback, onClose }: ClientResponseProps) => {
           rows={10}
           placeholder="Digite sua resposta ao cliente..."
         />
-      </div>
-      
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>
+      </section>
+
+      <section className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onClose} disabled={sending}>
           Cancelar
         </Button>
         <Button onClick={handleSendResponse} disabled={sending}>
           <SendHorizontal className="mr-2 h-4 w-4" />
-          {sending ? "Enviando..." : "Enviar Resposta"}
+          {sending ? 'Enviando...' : 'Enviar Resposta'}
         </Button>
-      </div>
+      </section>
     </div>
   );
 };

@@ -2,12 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, MessageSquare, BarChart2, PlusCircle, FileText, Settings, Download, HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { collection, query, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, Timestamp, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface Avaliacao {
   id: string;
@@ -30,6 +42,26 @@ interface Mensagem {
   timestamp: Timestamp;
 }
 
+interface Reclamacao {
+  id: string;
+  usuario: {
+    nome: string;
+    iniciais: string;
+  };
+  mensagem: string;
+  timestamp: Timestamp;
+}
+
+interface Pesquisa {
+  id: string;
+  usuario: {
+    nome: string;
+    iniciais: string;
+  };
+  resposta: string;
+  timestamp: Timestamp;
+}
+
 const useAvaliacoes = () => {
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [media, setMedia] = useState(0);
@@ -37,15 +69,13 @@ const useAvaliacoes = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAvaliacoes = async () => {
       setLoading(true);
-      try {
         const q = query(
           collection(db, 'avaliacoes'),
           orderBy('timestamp', 'desc'),
-          limit(5)
+      limit(50)
         );
-        const querySnapshot = await getDocs(q);
+    const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
         const avaliacoesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -56,13 +86,12 @@ const useAvaliacoes = () => {
             ? avaliacoesData.reduce((acc, curr) => acc + curr.nota, 0) / avaliacoesData.length
             : 0;
         setMedia(media);
-      } catch (error) {
+      setLoading(false);
+    }, () => {
         setError('Erro ao buscar avaliações');
-      } finally {
         setLoading(false);
-      }
-    };
-    fetchAvaliacoes();
+    });
+    return () => unsubscribe();
   }, []);
   return { avaliacoes, media, loading, error };
 };
@@ -73,29 +102,80 @@ const useMensagens = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMensagens = async () => {
       setLoading(true);
-      try {
         const q = query(
           collection(db, 'mensagens'),
           orderBy('timestamp', 'desc'),
-          limit(5)
+      limit(50)
         );
-        const querySnapshot = await getDocs(q);
+    const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
         const mensagensData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Mensagem[];
         setMensagens(mensagensData);
-      } catch (error) {
+      setLoading(false);
+    }, () => {
         setError('Erro ao buscar mensagens');
-      } finally {
         setLoading(false);
-      }
-    };
-    fetchMensagens();
+    });
+    return () => unsubscribe();
   }, []);
   return { mensagens, loading, error };
+};
+
+const useReclamacoes = () => {
+  const [reclamacoes, setReclamacoes] = useState<Reclamacao[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    setLoading(true);
+    const q = query(
+      collection(db, 'reclamacoes'),
+      orderBy('timestamp', 'desc'),
+      limit(5)
+    );
+    const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Reclamacao[];
+      setReclamacoes(data);
+      setLoading(false);
+    }, () => {
+      setError('Erro ao buscar reclamações');
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+  return { reclamacoes, loading, error };
+};
+
+const usePesquisas = () => {
+  const [pesquisas, setPesquisas] = useState<Pesquisa[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    setLoading(true);
+    const q = query(
+      collection(db, 'pesquisas'),
+      orderBy('timestamp', 'desc'),
+      limit(5)
+    );
+    const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Pesquisa[];
+      setPesquisas(data);
+      setLoading(false);
+    }, () => {
+      setError('Erro ao buscar pesquisas');
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+  return { pesquisas, loading, error };
 };
 
 const AvaliacaoCard: React.FC<{ avaliacao: Avaliacao }> = ({ avaliacao }) => (
@@ -150,13 +230,84 @@ const MensagemCard: React.FC<{ mensagem: Mensagem }> = ({ mensagem }) => (
   </div>
 );
 
+const ReclamacaoCard: React.FC<{ reclamacao: Reclamacao }> = ({ reclamacao }) => (
+  <div className="flex items-start gap-3 p-3 bg-muted rounded-md">
+    <div className="flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+        <span className="text-sm font-medium">{reclamacao.usuario.iniciais}</span>
+      </div>
+    </div>
+    <div className="flex-1">
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium">{reclamacao.usuario.nome}</h4>
+        <span className="text-xs text-muted-foreground">
+          {formatDistanceToNow(reclamacao.timestamp.toDate(), { addSuffix: true, locale: ptBR })}
+        </span>
+      </div>
+      <div className="text-sm text-muted-foreground mt-1 whitespace-pre-line break-words">
+        {reclamacao.mensagem}
+      </div>
+    </div>
+  </div>
+);
+
+const PesquisaCard: React.FC<{ pesquisa: Pesquisa }> = ({ pesquisa }) => (
+  <div className="flex items-start gap-3 p-3 bg-muted rounded-md">
+    <div className="flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+        <span className="text-sm font-medium">{pesquisa.usuario.iniciais}</span>
+      </div>
+    </div>
+    <div className="flex-1">
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium">{pesquisa.usuario.nome}</h4>
+        <span className="text-xs text-muted-foreground">
+          {formatDistanceToNow(pesquisa.timestamp.toDate(), { addSuffix: true, locale: ptBR })}
+        </span>
+      </div>
+      <div className="text-sm text-muted-foreground mt-1 whitespace-pre-line break-words">
+        {pesquisa.resposta}
+      </div>
+    </div>
+  </div>
+);
+
 const DashboardOverview = () => {
   const { avaliacoes, media, loading: loadingAval, error: errorAval } = useAvaliacoes();
   const { mensagens, loading: loadingMsg, error: errorMsg } = useMensagens();
+  const { reclamacoes, loading: loadingRec, error: errorRec } = useReclamacoes();
+  const { pesquisas, loading: loadingPesq, error: errorPesq } = usePesquisas();
   const navigate = useNavigate();
 
-  // Exemplo de dados para gráfico de evolução da média (mock)
-  const mediaHistorico = [4.2, 4.4, 4.5, 4.6, 4.7, 4.5, 4.8];
+  // Gerar dados para o gráfico real de evolução da média
+  const mediaHistorico = (() => {
+    // Agrupar por dia (ou semana, se preferir)
+    const agrupado: { [key: string]: number[] } = {};
+    avaliacoes.forEach(av => {
+      const data = av.timestamp.toDate();
+      const key = data.toLocaleDateString('pt-BR');
+      if (!agrupado[key]) agrupado[key] = [];
+      agrupado[key].push(av.nota);
+    });
+    // Ordenar por data e pegar os últimos 7 períodos
+    const chaves = Object.keys(agrupado).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const ultimos = chaves.slice(-7);
+    return ultimos.map(key => {
+      const notas = agrupado[key];
+      return notas.reduce((a, b) => a + b, 0) / notas.length;
+    });
+  })();
+  const labelsHistorico = (() => {
+    const agrupado: { [key: string]: number[] } = {};
+    avaliacoes.forEach(av => {
+      const data = av.timestamp.toDate();
+      const key = data.toLocaleDateString('pt-BR');
+      if (!agrupado[key]) agrupado[key] = [];
+      agrupado[key].push(av.nota);
+    });
+    const chaves = Object.keys(agrupado).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    return chaves.slice(-7);
+  })();
 
   return (
     <div className="space-y-6">
@@ -244,20 +395,78 @@ const DashboardOverview = () => {
             <CardDescription>Últimos 7 períodos</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center h-full">
-              {/* Gráfico de barras simples (mock) */}
-              <div className="flex items-end gap-1 h-24 w-full max-w-xs mx-auto">
-                {mediaHistorico.map((valor, idx) => (
-                  <div key={idx} className="flex flex-col items-center justify-end h-full">
-                    <div
-                      className="bg-taxi-green rounded-t-md"
-                      style={{ height: `${valor * 20}px`, width: '18px', minHeight: '8px' }}
-                      title={`Média: ${valor}`}
-                    ></div>
-                    <span className="text-xs text-muted-foreground mt-1">{valor.toFixed(1)}</span>
-                  </div>
-                ))}
+            <div className="flex flex-col items-center justify-center h-full w-full">
+              <div className="w-full max-w-xs mx-auto">
+                <Line
+                  data={{
+                    labels: labelsHistorico,
+                    datasets: [
+                      {
+                        label: 'Média',
+                        data: mediaHistorico,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34,197,94,0.2)',
+                        tension: 0.4,
+                        fill: true,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: { display: false },
+                      title: { display: false },
+                    },
+                    scales: {
+                      y: { min: 0, max: 5, ticks: { stepSize: 1 } },
+                    },
+                  }}
+                />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Card de Reclamações */}
+        <Card className="col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle>Novas Reclamações</CardTitle>
+            <CardDescription>Últimas reclamações recebidas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {loadingRec ? (
+                <div className="text-center py-8 text-muted-foreground">Carregando reclamações...</div>
+              ) : errorRec ? (
+                <div className="text-center py-8 text-red-500">{errorRec}</div>
+              ) : reclamacoes.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">Nenhuma reclamação encontrada.</div>
+              ) : (
+                reclamacoes.map(reclamacao => (
+                  <ReclamacaoCard key={reclamacao.id} reclamacao={reclamacao} />
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Card de Pesquisas */}
+        <Card className="col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle>Novas Pesquisas</CardTitle>
+            <CardDescription>Últimas pesquisas respondidas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {loadingPesq ? (
+                <div className="text-center py-8 text-muted-foreground">Carregando pesquisas...</div>
+              ) : errorPesq ? (
+                <div className="text-center py-8 text-red-500">{errorPesq}</div>
+              ) : pesquisas.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">Nenhuma pesquisa encontrada.</div>
+              ) : (
+                pesquisas.map(pesquisa => (
+                  <PesquisaCard key={pesquisa.id} pesquisa={pesquisa} />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

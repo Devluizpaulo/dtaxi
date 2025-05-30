@@ -49,9 +49,15 @@ interface Praise {
   email?: string;
 }
 
+// Função utilitária para validar telefone brasileiro (10 ou 11 dígitos, só números)
+function isValidPhone(phone: string) {
+  return /^\d{10,11}$/.test(phone.replace(/\D/g, ''));
+}
+
 const DriverMessaging = () => {
   const { toast } = useToast();
   const [praises, setPraises] = useState<Praise[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedPraise, setSelectedPraise] = useState<Praise | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSendingOpen, setIsSendingOpen] = useState(false);
@@ -70,6 +76,7 @@ const DriverMessaging = () => {
 
   useEffect(() => {
     const fetchPraises = async () => {
+      setLoading(true);
       const q = query(collection(db, 'reclamacoes'), where('tipo', '==', 'Elogio'));
       const snap = await getDocs(q);
       const elogios = snap.docs.map(docSnap => {
@@ -88,6 +95,7 @@ const DriverMessaging = () => {
         };
       });
       setPraises(elogios);
+      setLoading(false);
     };
     fetchPraises();
   }, []);
@@ -110,6 +118,14 @@ const DriverMessaging = () => {
       toast({
         title: "Número de telefone não encontrado",
         description: "Não foi possível encontrar o telefone do motorista. Verifique o código informado.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!isValidPhone(messageDetails.driverPhone)) {
+      toast({
+        title: "Telefone inválido",
+        description: "O telefone deve conter DDD e ter 10 ou 11 dígitos.",
         variant: "destructive",
       });
       return;
@@ -299,7 +315,20 @@ const DriverMessaging = () => {
 
       <div className="relative py-8">
         <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-2 bg-gradient-to-b from-blue-400 via-green-400 to-pink-400 rounded"></div>
-        {filteredPraises.length > 0 ? (
+        {loading ? (
+          <div className="space-y-6">
+            {[...Array(4)].map((_, idx) => (
+              <div key={idx} className="flex items-center mb-8 animate-pulse">
+                <div className="w-1/2 px-4">
+                  <div className="p-4 rounded-lg shadow-lg bg-gray-100 border-l-4 border-gray-200 h-28" />
+                </div>
+                <div className="w-1/2 flex justify-center">
+                  <div className="w-6 h-6 rounded-full border-4 border-gray-200 bg-white" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredPraises.length > 0 ? (
           filteredPraises.map((praise, idx) => (
             <div key={praise.id} className={`flex items-center mb-8 ${idx % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
               onClick={() => setSelectedPraiseDetails(praise)}>

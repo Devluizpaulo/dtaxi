@@ -6,18 +6,15 @@ const SustainabilitySection = () => {
   return (
     <section id="sustentabilidade" className="py-20 bg-gradient-to-b from-green-50 via-blue-50 to-orange-50 relative">
       {/* Selo ecológico */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-white/90 border-2 border-green-400 rounded-full px-4 py-1 shadow-lg">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-white/90 border-2 border-green-400 rounded-full px-2 py-1 shadow-lg">
         <Leaf className="h-5 w-5 text-green-600" />
-        <span className="text-green-700 font-semibold text-sm">Compromisso Ecológico</span>
+        <span className="text-green-700 font-semibold text-sm">Nosso Compromisso Ecológico</span>
       </div>
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-taxi-green/20 text-taxi-green px-4 py-2 rounded-full mb-4">
-            <Leaf className="h-5 w-5" />
-            <span className="font-medium">Nossa Missão Verde</span>
-          </div>
+          
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-taxi-black">Transformando a Mobilidade Urbana</h2>
-          <p className="text-lg text-taxi-gray max-w-3xl mx-auto">
+          <p className="text-lg text-taxi-gray max-w-3xl mx-auto text-justify">
             Estamos liderando a revolução da mobilidade sustentável, com uma frota que respeita o meio ambiente e contribui para um futuro mais limpo.
           </p>
         </div>

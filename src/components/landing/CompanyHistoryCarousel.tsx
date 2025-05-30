@@ -13,8 +13,8 @@ import img2024 from '@/images/2024.png';
 const historyEvents = [
   {
     year: "1969",
-    title: "Início das Frotas",
-    description: "As frotas de táxi tornam-se a espinha dorsal do transporte de passageiros em São Paulo.",
+    title: "Lei do Taxi",
+    description: "Sancionada a lei municipal que regulamentou a categoria, estabelecendo regras para frotas, alem de direitos e obrigações dos motoristas.",
     icon: <Users className="w-8 h-8 text-green-300" />, color: "from-green-600 to-green-800",
     image: img1969
   },
@@ -61,12 +61,15 @@ const historyEvents = [
 
 export default function CompanyHistoryCarousel() {
   return (
-    <div id="historia" className="w-full max-w-4xl mx-auto py-8">
-      <h2 className="text-3xl font-bold text-center mb-4">Nossa História</h2>
-      <p className="text-lg text-center max-w-2xl mx-auto mb-8 text-taxi-gray">
-        Bem-vindo à História de Duas Empresas Pioneiras: <b>ADETAX</b> e <b>D-TAXI São Paulo</b>!<br />
-        Desde 1969, as frotas de táxi são a espinha dorsal do transporte em São Paulo. Conheça nossos marcos de inovação, acessibilidade e sustentabilidade.
-      </p>
+    <div id="historia" className="w-full max-w-5xl mx-auto py-8 px-4">
+      <div className="text-center">
+        <h2 className="text-3xl font-bold mb-4">Nossa Trajetória</h2>
+        <p className="text-lg max-w-2xl mx-auto mb-8 text-taxi-gray text-justify">
+          <b>ADETAX e D-TAXI</b>: Uma História de Pioneirismo no Transporte Paulistano<br /><br />
+          Há mais de 50 anos revolucionando a mobilidade urbana, nossas frotas escrevem capítulos de inovação,
+          acessibilidade e sustentabilidade na cidade de São Paulo.
+        </p>
+      </div>
       <Swiper
         modules={[Navigation, Pagination]}
         spaceBetween={30}
@@ -81,21 +84,23 @@ export default function CompanyHistoryCarousel() {
       >
         {historyEvents.map((event, idx) => (
           <SwiperSlide key={idx}>
-            <div className={`bg-gradient-to-br ${event.color} rounded-xl shadow-lg p-8 flex flex-col items-center text-white h-full min-h-[320px]`}>
+            <div className={`bg-gradient-to-br ${event.color} rounded-xl shadow-lg p-6 flex flex-col items-center text-white h-full min-h-[320px]`}>
               {event.image && (
                 <img
                   src={event.image}
                   alt={event.title}
-                  className="w-48 h-48 object-cover rounded-lg shadow mb-4 border-4 border-white"
+                  className="w-40 h-40 md:w-48 md:h-48 object-cover rounded-lg shadow mb-4 border-4 border-white"
                 />
               )}
-              {event.icon}
-              <h3 className="text-xl font-bold mt-4">{event.year} - {event.title}</h3>
-              <p className="mt-2 text-base text-center text-justify">{event.description}</p>
+              <div className="text-center">
+                {event.icon}
+                <h3 className="text-xl font-bold mt-2">{event.year} - {event.title}</h3>
+                <p className="mt-2 text-sm md:text-base text-justify px-2">{event.description}</p>
+              </div>
             </div>
           </SwiperSlide>
         ))}
       </Swiper>
     </div>
   );
-} 
+}

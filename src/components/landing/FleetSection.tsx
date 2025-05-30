@@ -26,22 +26,15 @@ const FleetSection = () => {
   };
 
   return (
-    <section id="frota" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <section id="frota" className="py-0 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-4">
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
           variants={containerVariants}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
-          <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center gap-2 bg-taxi-green/20 text-taxi-green px-4 py-2 rounded-full mb-4"
-          >
-            <Car className="h-5 w-5" />
-            <span className="font-medium">Nossa Frota</span>
-          </motion.div>
           <motion.h2
             variants={itemVariants}
             className="text-3xl md:text-4xl font-bold mb-4 text-taxi-black"
@@ -50,7 +43,7 @@ const FleetSection = () => {
           </motion.h2>
           <motion.p
             variants={itemVariants}
-            className="text-lg text-taxi-gray max-w-3xl mx-auto"
+            className="text-lg text-taxi-gray max-w-3xl mx-auto text-justify"
           >
             Nossa frota é composta por veículos de última geração, priorizando conforto, segurança e sustentabilidade.
           </motion.p>
@@ -68,7 +61,7 @@ const FleetSection = () => {
               <Battery className="h-7 w-7 text-taxi-yellow ml-[-10px]" />
             </div>
             <h3 className="text-xl font-bold mb-2">Veículos Elétricos & Híbridos</h3>
-            <p className="text-taxi-gray mb-2">
+            <p className="text-taxi-gray mb-2 text-justify">
               Viagens silenciosas, economia de combustível e baixíssima emissão de poluentes. Eficiência, autonomia e sustentabilidade em cada trajeto.
             </p>
           </motion.div>
@@ -81,7 +74,7 @@ const FleetSection = () => {
               <Users className="h-7 w-7 text-blue-600" />
             </div>
             <h3 className="text-xl font-bold mb-2">Táxis Acessíveis</h3>
-            <p className="text-taxi-gray mb-2">
+            <p className="text-taxi-gray mb-2 text-justify">
               Inclusão e conforto para todos. Veículos adaptados para cadeirantes e pessoas com mobilidade reduzida, com atendimento 24h.
             </p>
             <div className="flex justify-between text-sm w-full mt-2">
@@ -98,7 +91,7 @@ const FleetSection = () => {
               <Zap className="h-7 w-7 text-green-600" />
             </div>
             <h3 className="text-xl font-bold mb-2">Táxis a GNV</h3>
-            <p className="text-taxi-gray mb-2">
+            <p className="text-taxi-gray mb-2 text-justify">
               Frota movida a Gás Natural Veicular: economia, sustentabilidade e menor emissão de poluentes para um futuro mais limpo.
             </p>
             <div className="flex justify-between text-sm w-full mt-2">
