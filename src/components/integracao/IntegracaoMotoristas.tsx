@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SelectTurma from "./SelectTurma";
 import ModalAdicionarMotorista from "./ModalAdicionarMotorista";
 import ListaMotoristas from "./ListaMotoristas";
 import ResumoTurma from "./ResumoTurma";
 import { Turma, Motorista } from "./types";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const IntegracaoMotoristas: React.FC = () => {
   const [turmaSelecionada, setTurmaSelecionada] = useState<Turma | null>(null);
@@ -11,9 +13,23 @@ const IntegracaoMotoristas: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
+  useEffect(() => {
+    const fetchMotoristas = async () => {
+      if (!turmaSelecionada) {
+        setMotoristas([]);
+        return;
+      }
+      setLoading(true);
+      const snap = await getDocs(collection(db, "turmas-integracao", turmaSelecionada.id, "motoristas"));
+      setMotoristas(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Motorista)));
+      setLoading(false);
+    };
+    fetchMotoristas();
+  }, [turmaSelecionada]);
+
   return (
-    <div className="p-4 max-w-5xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold mb-4">Integração de Motoristas</h2>
+    <div className="p-2 sm:p-4 max-w-6xl mx-auto space-y-6 w-full">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Integração de Motoristas</h2>
       <SelectTurma
         turmaSelecionada={turmaSelecionada}
         setTurmaSelecionada={setTurmaSelecionada}
