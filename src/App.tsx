@@ -20,6 +20,7 @@ import ContactPage from "./pages/ContactPage";
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import DashboardConfiguracoes from './pages/DashboardConfiguracoes';
 import RequireAuth from '@/components/auth/RequireAuth';
+import SecretariaPage from './pages/SecretariaPage';
 
 
 const App = () => {
@@ -50,6 +51,8 @@ const App = () => {
                 <Route path="motorista-elogios" element={<DriverMessagingPage />} />
                 <Route path="configuracoes" element={<DashboardConfiguracoes />} />
               </Route>
+
+              <Route path="/secretaria" element={<SecretariaPage />} />
 
               {/* Catch-all route for 404 */}
               <Route path="*" element={<NotFound />} />

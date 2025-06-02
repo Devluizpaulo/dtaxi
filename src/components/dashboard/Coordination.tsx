@@ -23,8 +23,12 @@ import { useAuth } from '@/hooks/useAuth';
 import IntegracaoMotoristas from '@/components/integracao/IntegracaoMotoristas';
 
 const tiposDocumento = [
-  'Ata de Comissão de Ética',
-  'Relatório de Ocorrência',
+  'Ata',
+  'Relatório',
+  'Comunicação Interna',
+  'Comunicação Externa',
+  'Suspensão',
+  'Geral',
   'Portaria',
   'Outro',
 ];
@@ -229,9 +233,9 @@ const Coordination = () => {
             </div>
           )}
           {/* Modal de formulário dinâmico para cada tipo */}
-          {tipoSelecionado === 'Ata de Comissão de Ética' && (
+          {tipoSelecionado === 'Ata' && (
             <AtaFormModal
-              open={showDocModal && tipoSelecionado === 'Ata de Comissão de Ética'}
+              open={showDocModal && tipoSelecionado === 'Ata'}
               onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
               onSave={async novoDoc => {
                 if (docEdit) {
@@ -249,9 +253,9 @@ const Coordination = () => {
               loading={documentosLoading}
             />
           )}
-          {tipoSelecionado === 'Relatório de Ocorrência' && (
+          {tipoSelecionado === 'Relatório' && (
             <RelatorioOcorrenciaFormModal
-              open={showDocModal && tipoSelecionado === 'Relatório de Ocorrência'}
+              open={showDocModal && tipoSelecionado === 'Relatório'}
               onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
               onSave={async novoDoc => {
                 if (docEdit) {
@@ -268,25 +272,25 @@ const Coordination = () => {
               loading={documentosLoading}
             />
           )}
-          {tipoSelecionado && tipoSelecionado !== 'Ata de Comissão de Ética' && tipoSelecionado !== 'Relatório de Ocorrência' && (
-          <DocumentoModal
-            tipo={tipoSelecionado || ''}
-            documento={docEdit}
-            open={showDocModal && !!tipoSelecionado}
-            onSave={async novoDoc => {
-              if (docEdit) {
-                await updateDocumento(docEdit.id, novoDoc);
-              } else {
-                await addDocumento(novoDoc);
-              }
-              setShowDocModal(false);
-              setTipoSelecionado(null);
-              setDocEdit(null);
-              toast({ title: 'Documento salvo com sucesso!' });
-            }}
-            onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
+          {tipoSelecionado && tipoSelecionado !== 'Ata' && tipoSelecionado !== 'Relatório' && (
+            <DocumentoModal
+              tipo={tipoSelecionado || ''}
+              documento={docEdit}
+              open={showDocModal && !!tipoSelecionado}
+              onSave={async novoDoc => {
+                if (docEdit) {
+                  await updateDocumento(docEdit.id, { ...novoDoc, tipo: tipoSelecionado });
+                } else {
+                  await addDocumento({ ...novoDoc, tipo: tipoSelecionado });
+                }
+                setShowDocModal(false);
+                setTipoSelecionado(null);
+                setDocEdit(null);
+                toast({ title: 'Documento salvo com sucesso!' });
+              }}
+              onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
               loading={documentosLoading}
-          />
+            />
           )}
         </TabsContent>
         <TabsContent value="comunicados" className="space-y-4 px-1 sm:px-0">

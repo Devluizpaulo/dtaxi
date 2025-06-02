@@ -154,7 +154,7 @@ const ContactMessages = () => {
     if (!m.tipo) return false;
     return m.tipo.toLowerCase().includes(archivedTypeFilter.toLowerCase());
   }).length;
-  
+
   // Sincroniza dados do Firestore com os dados locais quando disponíveis
   useEffect(() => {
     if (reclamacoesData && reclamacoesData.length > 0) {
@@ -211,7 +211,18 @@ const ContactMessages = () => {
       await setDoc(ref, { status: newStatus }, { merge: true });
       await addHistorico(messageId, `Status alterado para ${newStatus}`, resolucaoObs);
       if (newStatus === 'arquivado') {
-        setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, status: 'arquivado' } : msg));
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const originalData = snap.data();
+          await setDoc(doc(collection(db, 'reclamacoes-arquivadas'), messageId), {
+            ...originalData,
+            status: 'arquivado',
+            dataArquivamento: Timestamp.fromDate(new Date()),
+            historico: originalData.historico || []
+          }, { merge: true });
+          await deleteDoc(ref);
+          setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        }
       }
       updateSuccess = true;
     } catch (err) {
@@ -266,39 +277,31 @@ const ContactMessages = () => {
     }
   };
 
-  const handleSelectArchived = (id: string) => {
-    setSelectedArchivedIds(prev => prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]);
-  };
-  const handleSelectAllArchived = () => {
-    if (!arquivadasData) return;
-    const filtered = arquivadasData.filter(m => {
-      if (archivedTypeFilter === 'todos') return true;
-      if (!m.tipo) return false;
-      return m.tipo.toLowerCase().includes(archivedTypeFilter.toLowerCase());
-    });
-    if (selectedArchivedIds.length === filtered.length) {
-      setSelectedArchivedIds([]);
-    } else {
-      setSelectedArchivedIds(filtered.map(m => m.id));
-    }
-  };
-
+  // Função para desarquivar
   const handleDesarquivarSelecionadas = async () => {
     if (!arquivadasData) return;
-    const toDesarchive = arquivadasData.filter(m => selectedArchivedIds.includes(m.id));
-    for (const msg of toDesarchive) {
+    for (const id of selectedArchivedIds) {
+      const msg = arquivadasData.find(m => m.id === id);
+      if (!msg) continue;
       // Remove de reclamacoes-arquivadas
-      await deleteDoc(doc(collection(db, 'reclamacoes-arquivadas'), msg.id));
-      // Adiciona em reclamacoes
-      await setDoc(doc(collection(db, 'reclamacoes'), msg.id), {
-        ...msg,
+      await deleteDoc(doc(collection(db, 'reclamacoes-arquivadas'), id));
+      // Adiciona em reclamacoes (status pendente)
+      const { dataArquivamento, ...msgData } = msg;
+      await setDoc(doc(collection(db, 'reclamacoes'), id), {
+        ...msgData,
         status: 'pendente',
         dataArquivamento: null,
       }, { merge: true });
     }
     setSelectedArchivedIds([]);
-    toast({ title: 'Mensagens desarquivadas!' });
   };
+
+  // Função utilitária para garantir Date
+  function toDateSafe(val: string | Timestamp | Date): Date {
+    if (val instanceof Date) return val;
+    if (val instanceof Timestamp) return val.toDate();
+    return new Date(val);
+  }
 
   return (
     <div className="space-y-6">
@@ -539,39 +542,71 @@ const ContactMessages = () => {
               </Button>
             ))}
           </div>
+          {/* Seleção e desarquivação */}
+          <div className="flex items-center gap-4 mb-2">
+            <input
+              type="checkbox"
+              checked={allArchivedSelected}
+              onChange={() => {
+                if (!arquivadasData) return;
+                if (allArchivedSelected) setSelectedArchivedIds([]);
+                else setSelectedArchivedIds(arquivadasData.filter(m => {
+                  if (archivedTypeFilter === 'todos') return true;
+                  if (!m.tipo) return false;
+                  return m.tipo.toLowerCase().includes(archivedTypeFilter.toLowerCase());
+                }).map(m => m.id));
+              }}
+            />
+            <span className="text-sm">Selecionar todos</span>
+            {selectedArchivedIds.length > 0 && (
+              <Button
+                className="btn btn-success ml-4"
+                onClick={handleDesarquivarSelecionadas}
+              >
+                Desarquivar selecionadas ({selectedArchivedIds.length})
+              </Button>
+            )}
+          </div>
           <Table className="min-w-full overflow-x-auto text-xs sm:text-sm md:text-base" style={{width: '100%'}}>
             <TableHeader>
               <TableRow>
+                <TableHead></TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Data Reclamação</TableHead>
+                <TableHead>Data Arquivamento</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {messages.filter(m => m.status === 'arquivado').length === 0 ? (
+              {isLoadingArquivadas ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4">Nenhuma reclamação arquivada.</TableCell>
+                  <TableCell colSpan={6} className="text-center py-4">Carregando arquivadas...</TableCell>
+                </TableRow>
+              ) : !arquivadasData || arquivadasData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-4">Nenhuma reclamação arquivada.</TableCell>
                 </TableRow>
               ) : (
-                messages
-                  .filter(m => m.status === 'arquivado')
+                arquivadasData
                   .filter(m => {
                     if (archivedTypeFilter === 'todos') return true;
                     if (!m.tipo) return false;
                     return m.tipo.toLowerCase().includes(archivedTypeFilter.toLowerCase());
                   })
                   .map(m => (
-                    <TableRow key={m.id} className="cursor-pointer hover:bg-gray-100" onClick={() => setSelectedArchived(m)}>
+                    <TableRow key={m.id} className="cursor-pointer hover:bg-gray-100">
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedArchivedIds.includes(m.id)}
+                          onChange={() => setSelectedArchivedIds(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
+                        />
+                      </TableCell>
                       <TableCell>{m.nome || '-'}</TableCell>
                       <TableCell>{m.tipo || '-'}</TableCell>
-                      <TableCell>{
-                        m.dataEnvio instanceof Date
-                          ? m.dataEnvio.toLocaleDateString('pt-BR')
-                          : (typeof m.dataEnvio === 'object' && m.dataEnvio && 'toDate' in m.dataEnvio && typeof (m as any).toDate === 'function'
-                              ? (m as any).toDate().toLocaleDateString('pt-BR')
-                              : '-')
-                      }</TableCell>
+                      <TableCell>{m.dataEnvio ? toDateSafe(m.dataEnvio).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                      <TableCell>{m.dataArquivamento ? toDateSafe(m.dataArquivamento).toLocaleDateString('pt-BR') : '-'}</TableCell>
                       <TableCell>{((m as any).status) || 'arquivado'}</TableCell>
                     </TableRow>
                   ))
@@ -649,7 +684,7 @@ const ContactMessages = () => {
                     {getStatusLabel(selectedMessage.status).label}
                   </Badge>
                   {selectedMessage.type === 'Reclamação' && selectedMessage.status !== 'respondido' && (() => {
-                    const dataMsg = new Date(selectedMessage.date);
+                    const dataMsg = toDateSafe(selectedMessage.date);
                     const agora = new Date();
                     const diffHrs = Math.floor((agora.getTime() - dataMsg.getTime()) / (1000 * 60 * 60));
                     if (diffHrs <= 48) {
@@ -663,7 +698,7 @@ const ContactMessages = () => {
             </DialogHeader>
             <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base">
               <div><span className="font-semibold">De:</span> {selectedMessage.name} &lt;{selectedMessage.email}&gt;</div>
-              <div><span className="font-semibold">Data:</span> {new Date(selectedMessage.date).toLocaleString('pt-BR')}</div>
+              <div><span className="font-semibold">Data:</span> {selectedMessage.date ? toDateSafe(selectedMessage.date).toLocaleString('pt-BR') : '-'}</div>
               <div><span className="font-semibold">Prefixo:</span> {selectedMessage.prefixo ?? <span className="text-gray-400">-</span>}</div>
               <div>
                 <span className="font-semibold">Mensagem:</span>

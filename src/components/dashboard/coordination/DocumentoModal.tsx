@@ -4,7 +4,6 @@ import { X } from 'lucide-react';
 import { Documento } from "./types";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import 'quill-emoji/dist/quill-emoji.css';
 
 interface DocumentoModalProps {
   tipo: string;
@@ -77,12 +76,8 @@ const modules = {
     [{ 'indent': '-1'}, { 'indent': '+1' }],
     ['blockquote', 'code-block'],
     ['link', 'image', 'video'],
-    ['emoji'],
     ['clean'],
   ],
-  'emoji-toolbar': true,
-  'emoji-textarea': false,
-  'emoji-shortname': true,
 };
 
 const DocumentoModal: React.FC<DocumentoModalProps> = ({ tipo, documento, open, loading, onSave, onCancel }) => {

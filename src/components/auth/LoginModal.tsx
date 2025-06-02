@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
 interface LoginModalProps {
@@ -19,12 +19,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: "Login realizado com sucesso!",
@@ -73,6 +75,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={e => setRememberMe(e.target.checked)}
+              className="rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <Label htmlFor="rememberMe" className="text-sm">Lembrar de mim</Label>
           </div>
           <Button
             type="submit"
