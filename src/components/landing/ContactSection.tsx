@@ -83,9 +83,16 @@ const ContactSection = () => {
         protocolo = await generateProtocolo();
       }
 
-      await addDoc(collection(db, 'contactMessages'), {
+      const collectionName = {
+        reclamacao: 'reclamacoes',
+        elogio: 'elogios',
+        sugestao: 'sugestoes',
+        duvida: 'duvidas'
+      }[formData.messageType] || 'outras-mensagens';
+
+      await addDoc(collection(db, collectionName), {
         ...formData,
-        status: 'pending',
+        status: 'pendente',
         protocolo: protocolo || null,
         createdAt: serverTimestamp()
       });

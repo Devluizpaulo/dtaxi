@@ -141,3 +141,4 @@ const ListaMotoristas: React.FC<Props> = React.memo(({ motoristas, turma, setMot
 });
 
 export default ListaMotoristas;
+ 

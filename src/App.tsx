@@ -10,7 +10,6 @@ import DashboardLayout from "./components/dashboard/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import FleetPage from "./pages/FleetPage";
 import SatisfactionPage from "./pages/SatisfactionPage";
-import ContactMessagesPage from "./pages/ContactMessagesPage";
 import { ThemeProvider } from "@/hooks/useTheme";
 import UserManagementPage from "./pages/UserManagementPage";
 import CoordinationPage from "./pages/CoordinationPage";
@@ -21,6 +20,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import DashboardConfiguracoes from './pages/DashboardConfiguracoes';
 import RequireAuth from '@/components/auth/RequireAuth';
 import SecretariaPage from './pages/SecretariaPage';
+import TabsMensagens from "./components/mensagens/TabsMensagens";
+import PainelMensagens from "./pages/PainelMensagens";
 
 
 const App = () => {
@@ -45,7 +46,7 @@ const App = () => {
                 <Route index element={<Dashboard />} />
                 <Route path="frota" element={<FleetPage />} />
                 <Route path="satisfacao" element={<SatisfactionPage />} />
-                <Route path="mensagens" element={<ContactMessagesPage />} />
+                <Route path="mensagens" element={< PainelMensagens/>} />
                 <Route path="usuarios" element={<UserManagementPage />} />
                 <Route path="coordenacao" element={<CoordinationPage />} />
                 <Route path="motorista-elogios" element={<DriverMessagingPage />} />

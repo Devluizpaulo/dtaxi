@@ -273,24 +273,24 @@ const Coordination = () => {
             />
           )}
           {tipoSelecionado && tipoSelecionado !== 'Ata' && tipoSelecionado !== 'Relatório' && (
-            <DocumentoModal
-              tipo={tipoSelecionado || ''}
-              documento={docEdit}
-              open={showDocModal && !!tipoSelecionado}
-              onSave={async novoDoc => {
-                if (docEdit) {
+          <DocumentoModal
+            tipo={tipoSelecionado || ''}
+            documento={docEdit}
+            open={showDocModal && !!tipoSelecionado}
+            onSave={async novoDoc => {
+              if (docEdit) {
                   await updateDocumento(docEdit.id, { ...novoDoc, tipo: tipoSelecionado });
-                } else {
+              } else {
                   await addDocumento({ ...novoDoc, tipo: tipoSelecionado });
-                }
-                setShowDocModal(false);
-                setTipoSelecionado(null);
-                setDocEdit(null);
-                toast({ title: 'Documento salvo com sucesso!' });
-              }}
-              onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
+              }
+              setShowDocModal(false);
+              setTipoSelecionado(null);
+              setDocEdit(null);
+              toast({ title: 'Documento salvo com sucesso!' });
+            }}
+            onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
               loading={documentosLoading}
-            />
+          />
           )}
         </TabsContent>
         <TabsContent value="comunicados" className="space-y-4 px-1 sm:px-0">

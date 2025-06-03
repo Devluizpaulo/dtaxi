@@ -77,7 +77,7 @@ const DriverMessaging = () => {
   useEffect(() => {
     const fetchPraises = async () => {
       setLoading(true);
-      const q = query(collection(db, 'reclamacoes'), where('tipo', '==', 'Elogio'));
+      const q = query(collection(db, 'elogios'), where('tipo', '==', 'Elogio'));
       const snap = await getDocs(q);
       const elogios = snap.docs.map(docSnap => {
         const data = docSnap.data();
