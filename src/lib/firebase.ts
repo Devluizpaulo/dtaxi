@@ -5,12 +5,13 @@ import { getStorage } from 'firebase/storage';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDA8t1v8IhN8HjicX0xvVS8GVCvZXesr2A",
-  authDomain: "dtaxisp.firebaseapp.com",
-  projectId: "dtaxisp",
-  storageBucket: "dtaxisp.firebaseapp.com",
-  messagingSenderId: "86958884423",
-  appId: "1:86958884423:web:2f8292b6d514e999241362"
+  apiKey: "AIzaSyBbXCsSagLkQfqvBSeYgd4s1ugplCZQxp4",
+  authDomain: "dtaxi-sp.firebaseapp.com",
+  projectId: "dtaxi-sp",
+  storageBucket: "dtaxi-sp.firebasestorage.app",
+  messagingSenderId: "295873272748",
+  appId: "1:295873272748:web:da13cda63420f93620b809",
+  measurementId: "G-WQLJGJEW8C"
 };
 
 // Initialize Firebase
