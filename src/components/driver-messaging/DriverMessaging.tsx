@@ -139,7 +139,7 @@ const DriverMessaging = () => {
         open={isCardPreviewOpen}
         onOpenChange={setIsCardPreviewOpen}
         praise={selectedPraise}
-        onGenerateCard={generatePraiseCard}
+        onGenerateCard={async (praise: Praise, cardRef) => { await generatePraiseCard(praise, cardRef); }}
       />
     </div>
   );

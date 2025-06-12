@@ -229,7 +229,7 @@ export default function TabelaMensagens({
                           {onArquivar && (
                             <ActionButton
                               icon={Archive}
-                              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                              onClick={(e) => {
                                 e.stopPropagation();
                                 onArquivar(msg);
                               }}
@@ -241,7 +241,7 @@ export default function TabelaMensagens({
                           {onMigrar && (
                             <ActionButton
                               icon={Move}
-                              onClick={(e) => {
+                              onClick={(e: React.MouseEvent) => {
                                 e.stopPropagation();
                                 onMigrar(msg);
                               }}

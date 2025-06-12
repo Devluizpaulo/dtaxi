@@ -139,25 +139,42 @@ export const usePraiseOperations = ({
     setIsGeneratingCard(true);
     
     try {
+      // Aguardar um momento para garantir que o DOM esteja renderizado
       await new Promise(resolve => setTimeout(resolve, 500));
       
       if (cardRef.current) {
+        // Obter as dimensões reais do elemento
+        const { width, height } = cardRef.current.getBoundingClientRect();
+        
         const canvas = await html2canvas(cardRef.current, {
-          scale: 2,
-          backgroundColor: null,
+          scale: 3, // Maior qualidade
+          backgroundColor: '#ffffff',
           logging: false,
+          useCORS: true,
+          allowTaint: true,
+          width: width, // Usar a largura real do elemento
+          height: height // Usar a altura real do elemento
         });
         
-        const image = canvas.toDataURL('image/png');
+        // Converter para PNG
+        const image = canvas.toDataURL('image/png', 1.0);
+        
+        // Criar link para download
         const link = document.createElement('a');
         link.href = image;
-        link.download = `elogio-motorista-${praise.driverCode}-${format(new Date(), 'dd-MM-yyyy')}.png`;
+        link.download = `card-elogio-motorista-${praise.driverCode}-${format(new Date(), 'dd-MM-yyyy-HHmm')}.png`;
+        
+        // Simular clique para download
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
         
         toast({
           title: "Card gerado com sucesso!",
           description: "A imagem foi baixada para o seu dispositivo.",
         });
+        
+        return true;
       }
     } catch (error) {
       console.error("Erro ao gerar card:", error);
@@ -166,6 +183,7 @@ export const usePraiseOperations = ({
         description: "Não foi possível gerar a imagem do card.",
         variant: "destructive",
       });
+      return false;
     } finally {
       setIsGeneratingCard(false);
     }
