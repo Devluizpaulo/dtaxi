@@ -18,7 +18,11 @@ import {
   Calendar,
   AlertCircle,
   ThumbsUp,
-  MessageSquare
+  MessageSquare,
+  Eye,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { db } from '@/lib/firebase';
@@ -26,6 +30,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc, query, where, orderBy } fr
 import jsPDF from 'jspdf';
 import autoTable, { UserOptions } from 'jspdf-autotable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { 
   BarChart, 
   Bar, 
@@ -139,6 +144,9 @@ export function PesquisasCard() {
   const [mostrarArquivadas, setMostrarArquivadas] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [trimestreAtual, setTrimestreAtual] = useState<number>(Math.ceil(new Date().getMonth() / 3));
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -643,4 +651,4 @@ export function PesquisasCard() {
       </CardContent>
     </Card>
   );
-} 
+}

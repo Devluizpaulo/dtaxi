@@ -24,7 +24,7 @@ const colecaoPorTipo: Record<string, string> = {
 export default function PainelMensagens() {
   const [categoria, setCategoria] = useState('reclamacao');
   // Corrigido para desestruturar o objeto retornado pelo hook
-  const { mensagens, loading, error } = useMensagens(categoria);
+  const { mensagens, loading, error, refresh } = useMensagens(categoria);
   const [mensagemSelecionada, setMensagemSelecionada] = useState<Mensagem | null>(null);
   const [imprimir, setImprimir] = useState<{ mensagem: Mensagem, ocultar: boolean } | null>(null);
   const { user } = useAuth();
@@ -65,9 +65,25 @@ export default function PainelMensagens() {
     try {
       const refOrigem = doc(db, colecaoPorTipo[categoria], msg.id!);
       const refDestino = doc(db, colecaoPorTipo['arquivadas'], msg.id!);
-      await setDoc(refDestino, {
+      
+      // Garantir que todos os campos obrigatórios estejam presentes
+      const mensagemCompleta = {
         ...msg,
+        // Campos obrigatórios com valores padrão se estiverem undefined
+        protocolo: msg.protocolo || null,
+        nome: msg.nome || '',
+        email: msg.email || '',
+        telefone: msg.telefone || '',
+        mensagem: msg.mensagem || '',
+        prefixo: msg.prefixo || '',
+        tipo: msg.tipo || categoria, // Usar categoria atual se tipo for undefined
+        assunto: msg.assunto || 'Sem assunto', // Corrigir campo undefined
+        status: msg.status || 'pendente',
+        politicaPrivacidade: msg.politicaPrivacidade || false,
+        dataCriacao: msg.dataCriacao || Timestamp.now(),
         dataArquivamento: Timestamp.now(),
+        resolvido: msg.resolvido || false,
+        ...(msg.resolucao !== undefined && { resolucao: msg.resolucao }),
         historico: [
           ...(msg.historico || []),
           {
@@ -76,9 +92,13 @@ export default function PainelMensagens() {
             data: Timestamp.now(),
           }
         ]
-      });
+      };
+      
+      await setDoc(refDestino, mensagemCompleta);
       await deleteDoc(refOrigem);
       setMensagemSelecionada(null);
+      // Atualizar a lista após arquivar
+      await refresh();
     } catch (err) {
       console.error('Erro ao arquivar mensagem:', err);
       alert('Erro ao arquivar mensagem. Verifique o console para mais detalhes.');
@@ -91,9 +111,24 @@ export default function PainelMensagens() {
     try {
       const refOrigem = doc(db, colecaoPorTipo[categoria], msg.id!);
       const refDestino = doc(db, colecaoPorTipo[novoTipo], msg.id!);
-      await setDoc(refDestino, {
+      
+      // Garantir que todos os campos obrigatórios estejam presentes
+      const mensagemCompleta = {
         ...msg,
-        tipo: novoTipo,
+        // Campos obrigatórios com valores padrão se estiverem undefined
+        protocolo: msg.protocolo || null,
+        nome: msg.nome || '',
+        email: msg.email || '',
+        telefone: msg.telefone || '',
+        mensagem: msg.mensagem || '',
+        prefixo: msg.prefixo || '',
+        tipo: novoTipo as keyof typeof colecaoPorTipo,
+        assunto: msg.assunto || 'Sem assunto', // Corrigir campo undefined
+        status: msg.status || 'pendente',
+        politicaPrivacidade: msg.politicaPrivacidade || false,
+        dataCriacao: msg.dataCriacao || Timestamp.now(),
+        resolvido: msg.resolvido || false,
+        ...(msg.resolucao !== undefined && { resolucao: msg.resolucao }),
         historico: [
           ...(msg.historico || []),
           {
@@ -103,9 +138,13 @@ export default function PainelMensagens() {
             observacao: `Migrado de ${categoria} para ${novoTipo}`
           }
         ]
-      });
+      };
+      
+      await setDoc(refDestino, mensagemCompleta);
       await deleteDoc(refOrigem);
       setMensagemSelecionada(null);
+      // Atualizar a lista após arquivar
+      await refresh();
     } catch (err) {
       console.error('Erro ao migrar mensagem:', err);
       alert('Erro ao migrar mensagem. Verifique o console para mais detalhes.');
@@ -118,9 +157,25 @@ export default function PainelMensagens() {
     try {
       const refOrigem = doc(db, colecaoPorTipo['arquivadas'], msg.id!);
       const refDestino = doc(db, colecaoPorTipo[msg.tipo], msg.id!);
-      await setDoc(refDestino, {
+      
+      // Garantir que todos os campos obrigatórios estejam presentes
+      const mensagemCompleta = {
         ...msg,
+        // Campos obrigatórios com valores padrão se estiverem undefined
+        protocolo: msg.protocolo || null,
+        nome: msg.nome || '',
+        email: msg.email || '',
+        telefone: msg.telefone || '',
+        mensagem: msg.mensagem || '',
+        prefixo: msg.prefixo || '',
+        tipo: msg.tipo || categoria, // Usar categoria atual se tipo for undefined
+        assunto: msg.assunto || 'Sem assunto', // Corrigir campo undefined
+        status: msg.status || 'pendente',
+        politicaPrivacidade: msg.politicaPrivacidade || false,
+        dataCriacao: msg.dataCriacao || Timestamp.now(),
         dataArquivamento: null,
+        resolvido: msg.resolvido || false,
+        ...(msg.resolucao !== undefined && { resolucao: msg.resolucao }),
         historico: [
           ...(msg.historico || []),
           {
@@ -129,9 +184,13 @@ export default function PainelMensagens() {
             data: Timestamp.now(),
           }
         ]
-      });
+      };
+      
+      await setDoc(refDestino, mensagemCompleta);
       await deleteDoc(refOrigem);
       setMensagemSelecionada(null);
+      // Atualizar a lista após arquivar
+      await refresh();
     } catch (err) {
       console.error('Erro ao desarquivar mensagem:', err);
       alert('Erro ao desarquivar mensagem. Verifique o console para mais detalhes.');

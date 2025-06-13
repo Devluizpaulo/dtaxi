@@ -295,8 +295,8 @@ export default function SatisfactionResults() {
       footer.style.textAlign = 'center';
       footer.style.fontSize = '12px';
       footer.style.marginTop = '24px';
-      footer.style.paddingBottom = '20px';
-      footer.innerHTML = `<hr style='margin:6px 0;border:none;border-top:1px solid #ccc;'/>Este relatório é confidencial.<br/>D-Taxi © ${new Date().getFullYear()}<br/>Gerado em ${new Date().toLocaleString('pt-BR')}`;
+      footer.style.paddingBottom = '18px';
+      footer.innerHTML = `<hr style='margin:6px 0;border:none;border-top:1px solid #ccc;'/>Este relatório é confidencial. D-Taxi © ${new Date().getFullYear()} - Gerado em ${new Date().toLocaleString('pt-BR')}`;
       // 5. Container principal
       const container = document.createElement('div');
       // Título
@@ -426,7 +426,6 @@ export default function SatisfactionResults() {
       headerText.innerHTML = `
         <div style="font-size: 22px; font-weight: 900; color: #1976d2;">D-Taxi São Paulo</div>
         <div style="font-size: 15px; color: #222; font-weight: 700;">Relatório da pesquisa de satisfação do cliente</div>
-        <div style="color: #607d8b; font-size: 12px; margin-top: 2px;">Emitido em ${new Date().toLocaleString('pt-BR')}</div>
         <div style="color: #607d8b; font-size: 12px; margin-top: 2px;">Av. Prestes Maia, 241 - Santa Ifigênia, São Paulo - SP, 01031-001</div>
         <div style="color: #607d8b; font-size: 12px; margin-top: 2px;">Telefone: 1194483.0851 | Email: contato@dtaxisp.com.br</div>
       `;
@@ -509,10 +508,10 @@ export default function SatisfactionResults() {
           ${perguntas.map((q, idx) => `
             <tr style="background:${idx % 2 === 0 ? '#f5faff' : '#fff'};">
               <td style="font-weight:700;color:#1976d2;position:relative;">${q.label}</td>
-              ${[1,2,3,4,5].map(nivel => {
-                const count = pesquisasFiltradas.filter(p => Number(p[q.campo]) === nivel).length;
-                return `<td style="text-align:center;">${count > 0 ? count : '<span style=\'font-size:14px;color:#bbb\'>○</span>'}</td>`;
-              }).join('')}
+              ${[1, 2, 3, 4, 5].map(nivel => {
+        const count = pesquisasFiltradas.filter(p => Number(p[q.campo]) === nivel).length;
+        return `<td style="text-align:center;">${count > 0 ? count : '<span style=\'font-size:14px;color:#bbb\'>○</span>'}</td>`;
+      }).join('')}
             </tr>
           `).join('')}
         </tbody>
@@ -625,58 +624,158 @@ export default function SatisfactionResults() {
       footer.style.textAlign = 'center';
       footer.style.fontSize = '11px';
       footer.style.marginTop = '12px';
-      footer.innerHTML = `<hr style='margin:6px 0;border:none;border-top:1px solid #ccc;'/>Este relatório é confidencial.<br/>D-Taxi © ${new Date().getFullYear()}<br/>Gerado em ${new Date().toLocaleString('pt-BR')}`;
+      footer.innerHTML = `<hr style='margin:6px 0;border:none;border-top:1px solid #ccc;'/>Este relatório é confidencial. D-Taxi © ${new Date().getFullYear()} - Gerado em ${new Date().toLocaleString('pt-BR')}`;
       container.appendChild(footer);
 
-      // 8. Nova página: tabela de avaliações
-      const pageBreak = document.createElement('div');
-      pageBreak.style.pageBreakBefore = 'always';
-      pageBreak.style.marginTop = '12px';
-      container.appendChild(pageBreak);
-      const tabelaTitle = document.createElement('h2');
-      tabelaTitle.style.color = '#1976d2';
-      tabelaTitle.style.fontWeight = '800';
-      tabelaTitle.style.fontSize = '16px';
-      tabelaTitle.style.marginBottom = '10px';
-      tabelaTitle.innerText = 'Tabela de Avaliações (Dados Sensíveis Ocultos)';
-      container.appendChild(tabelaTitle);
-      const table = document.createElement('table');
-      table.style.width = '100%';
-      table.style.borderCollapse = 'collapse';
-      table.style.fontSize = '12px';
-      table.style.marginBottom = '10px';
-      table.innerHTML = `
-        <thead>
-          <tr style="background:#1976d2;color:#fff;">
-            <th style="padding:6px 8px;">Nome</th>
-            <th style="padding:6px 8px;">Telefone</th>
-            <th style="padding:6px 8px;">Prefixo</th>
-            <th style="padding:6px 8px;">Média</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${pesquisasFiltradas.map((p, idx) => `
-            <tr style="background:${idx % 2 === 0 ? '#f5faff' : '#fff'};">
-              <td style="padding:6px 8px;">${mask(p.nome)}</td>
-              <td style="padding:6px 8px;">${mask(p.telefone)}</td>
-              <td style="padding:6px 8px;">${mask(p.prefixoVeiculo)}</td>
-              <td style="padding:6px 8px;">
-                <span style="font-weight:700;">${calcularMedia(p)?.toFixed(2) ?? '-'}</span>
-                ${calcularMedia(p) && (calcularMedia(p) >= 4.5 ? '<span style="background:#e0f7fa;color:#1976d2;border-radius:8px;padding:1px 6px;font-size:10px;margin-left:4px;">Alta</span>' : (calcularMedia(p) <= 2 ? '<span style="background:#ffebee;color:#d32f2f;border-radius:8px;padding:1px 6px;font-size:10px;margin-left:4px;">Baixa</span>' : ''))}
-              </td>
+      // 8. Páginas de tabelas de avaliações com paginação automática
+      const itemsPorPagina = 25; // Máximo de registros por página
+      const totalPaginas = Math.ceil(pesquisasFiltradas.length / itemsPorPagina);
+      
+      for (let pagina = 0; pagina < totalPaginas; pagina++) {
+        const inicio = pagina * itemsPorPagina;
+        const fim = Math.min(inicio + itemsPorPagina, pesquisasFiltradas.length);
+        const dadosPagina = pesquisasFiltradas.slice(inicio, fim);
+        
+        // Quebra de página
+        const pageBreak = document.createElement('div');
+        pageBreak.style.pageBreakBefore = 'always';
+        pageBreak.style.marginTop = '12px';
+        pageBreak.style.position = 'relative';
+        pageBreak.style.minHeight = '100vh';
+        pageBreak.style.paddingBottom = '80px';
+        container.appendChild(pageBreak);
+        
+        // Cabeçalho da página
+        const headerDiv = document.createElement('div');
+        headerDiv.style.display = 'flex';
+        headerDiv.style.justifyContent = 'space-between';
+        headerDiv.style.alignItems = 'center';
+        headerDiv.style.marginBottom = '15px';
+        headerDiv.style.borderBottom = '2px solid #1976d2';
+        headerDiv.style.paddingBottom = '8px';
+        
+        const tabelaTitle = document.createElement('h2');
+        tabelaTitle.style.color = '#1976d2';
+        tabelaTitle.style.fontWeight = '800';
+        tabelaTitle.style.fontSize = '18px';
+        tabelaTitle.style.margin = '0';
+        tabelaTitle.innerText = `Tabela de Avaliações ${totalPaginas > 1 ? `(Página ${pagina + 1} de ${totalPaginas})` : ''}`;
+        
+        const infoDiv = document.createElement('div');
+        infoDiv.style.fontSize = '12px';
+        infoDiv.style.color = '#666';
+        infoDiv.innerHTML = `
+          <div><strong>Registros:</strong> ${inicio + 1} - ${fim} de ${pesquisasFiltradas.length}</div>
+          <div><strong>Dados:</strong> Sensíveis Ocultos</div>
+        `;
+        
+        headerDiv.appendChild(tabelaTitle);
+        headerDiv.appendChild(infoDiv);
+        pageBreak.appendChild(headerDiv);
+        
+        // Estatísticas da página
+        const estatsPagina = dadosPagina.reduce((acc, p) => {
+          const media = calcularMedia(p);
+          if (media !== null) {
+            acc.total++;
+            acc.soma += media;
+            if (media >= 4.5) acc.alta++;
+            else if (media <= 2) acc.baixa++;
+            else acc.media++;
+          }
+          return acc;
+        }, { total: 0, soma: 0, alta: 0, media: 0, baixa: 0 });
+        
+        const statsDiv = document.createElement('div');
+        statsDiv.style.display = 'flex';
+        statsDiv.style.gap = '15px';
+        statsDiv.style.marginBottom = '12px';
+        statsDiv.style.padding = '8px 12px';
+        statsDiv.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
+        statsDiv.style.borderRadius = '6px';
+        statsDiv.style.fontSize = '11px';
+        
+        const mediaPagina = estatsPagina.total > 0 ? (estatsPagina.soma / estatsPagina.total).toFixed(2) : '0.00';
+        
+        statsDiv.innerHTML = `
+          <div><strong>Média desta página:</strong> <span style="color:#1976d2;font-weight:bold;">${mediaPagina}</span></div>
+          <div><strong>Alta satisfação:</strong> <span style="color:#388e3c;">${estatsPagina.alta}</span></div>
+          <div><strong>Média satisfação:</strong> <span style="color:#f57c00;">${estatsPagina.media}</span></div>
+          <div><strong>Baixa satisfação:</strong> <span style="color:#d32f2f;">${estatsPagina.baixa}</span></div>
+        `;
+        pageBreak.appendChild(statsDiv);
+        
+        // Tabela melhorada
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.fontSize = '11px';
+        table.style.marginBottom = '15px';
+        table.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        table.style.borderRadius = '6px';
+        table.style.overflow = 'hidden';
+        
+        table.innerHTML = `
+          <thead>
+            <tr style="background:linear-gradient(135deg, #1976d2 0%, #1565c0 100%);color:#fff;">
+              <th style="padding:10px 8px;font-weight:700;text-align:left;border-right:1px solid rgba(255,255,255,0.2);">#</th>
+              <th style="padding:10px 8px;font-weight:700;text-align:left;border-right:1px solid rgba(255,255,255,0.2);">Nome</th>
+              <th style="padding:10px 8px;font-weight:700;text-align:left;border-right:1px solid rgba(255,255,255,0.2);">Telefone</th>
+              <th style="padding:10px 8px;font-weight:700;text-align:left;border-right:1px solid rgba(255,255,255,0.2);">Prefixo</th>
+              <th style="padding:10px 8px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,0.2);">Data</th>
+              <th style="padding:10px 8px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,0.2);">Média</th>
+              <th style="padding:10px 8px;font-weight:700;text-align:center;">Status</th>
             </tr>
-          `).join('')}
-        </tbody>
-      `;
-      container.appendChild(table);
-
-      // 9. Rodapé da segunda página
-      const footer2 = document.createElement('div');
-      footer2.style.textAlign = 'center';
-      footer2.style.fontSize = '11px';
-      footer2.style.marginTop = '8px';
-      footer2.innerHTML = `<hr style='margin:6px 0;border:none;border-top:1px solid #ccc;'/>Este relatório é confidencial.<br/>D-Taxi © ${new Date().getFullYear()}<br/>Gerado em ${new Date().toLocaleString('pt-BR')}`;
-      container.appendChild(footer2);
+          </thead>
+          <tbody>
+            ${dadosPagina.map((p, idx) => {
+              const media = calcularMedia(p);
+              const globalIdx = inicio + idx + 1;
+              const statusColor = media >= 4.5 ? '#e8f5e8' : media <= 2 ? '#ffebee' : '#fff3e0';
+              const statusText = media >= 4.5 ? 'Excelente' : media >= 3.5 ? 'Bom' : media >= 2.5 ? 'Regular' : 'Ruim';
+              const statusTextColor = media >= 4.5 ? '#2e7d32' : media >= 3.5 ? '#1976d2' : media >= 2.5 ? '#f57c00' : '#d32f2f';
+              
+              return `
+                <tr style="background:${idx % 2 === 0 ? '#fafafa' : '#fff'};border-bottom:1px solid #e0e0e0;transition:background 0.2s;">
+                  <td style="padding:8px;font-weight:600;color:#666;border-right:1px solid #e0e0e0;">${globalIdx}</td>
+                  <td style="padding:8px;border-right:1px solid #e0e0e0;">${mask(p.nome)}</td>
+                  <td style="padding:8px;border-right:1px solid #e0e0e0;font-family:monospace;">${mask(p.telefone)}</td>
+                  <td style="padding:8px;border-right:1px solid #e0e0e0;text-align:center;font-weight:600;">${mask(p.prefixoVeiculo)}</td>
+                  <td style="padding:8px;border-right:1px solid #e0e0e0;text-align:center;font-size:10px;">${formatarData(p.dataEnvio)}</td>
+                  <td style="padding:8px;border-right:1px solid #e0e0e0;text-align:center;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                      <span style="font-weight:700;font-size:13px;color:${statusTextColor};">${media?.toFixed(2) ?? '-'}</span>
+                      ${media ? `<div style="display:flex;">${'★'.repeat(Math.round(media))}<span style="color:#ddd;">${'★'.repeat(5 - Math.round(media))}</span></div>` : ''}
+                    </div>
+                  </td>
+                  <td style="padding:8px;text-align:center;">
+                    <span style="background:${statusColor};color:${statusTextColor};padding:2px 6px;border-radius:12px;font-size:9px;font-weight:600;">${statusText}</span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        `;
+        pageBreak.appendChild(table);
+        
+        // Rodapé da página - posicionado no final
+        const footerPagina = document.createElement('div');
+        footerPagina.style.position = 'absolute';
+        footerPagina.style.bottom = '20px';
+        footerPagina.style.left = '0';
+        footerPagina.style.right = '0';
+        footerPagina.style.textAlign = 'center';
+        footerPagina.style.fontSize = '10px';
+        footerPagina.style.color = '#666';
+        footerPagina.innerHTML = `
+          <hr style='margin:8px 0;border:none;border-top:1px solid #ddd;'/>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0 20px;">
+            <span>Este relatório é confidencial. D-Taxi © ${new Date().getFullYear()}</span>
+            <span>Página ${pagina + 1} de ${totalPaginas} | Gerado em ${new Date().toLocaleString('pt-BR')}</span>
+          </div>
+        `;
+        pageBreak.appendChild(footerPagina);
+      }
 
       // 10. Exportar PDF
       html2pdf().set({
@@ -707,18 +806,18 @@ export default function SatisfactionResults() {
               <option value="">Todos os períodos</option>
               {periodos.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
-            <input type="text" placeholder="Buscar por nome ou prefixo" style={{ padding: 8, borderRadius: 6, border: '1px solid #1976d2', minWidth: 180 }} onChange={e => {/* implementar filtro futuramente */}} />
+            <input type="text" placeholder="Buscar por nome ou prefixo" style={{ padding: 8, borderRadius: 6, border: '1px solid #1976d2', minWidth: 180 }} onChange={e => {/* implementar filtro futuramente */ }} />
           </div>
         </div>
         <SatisfactionSummaryCards
           total={pesquisasPeriodo.length}
           mediaGeral={mediaGeral}
           percentualObs={pesquisasPeriodo.length ? Math.round(100 * pesquisasPeriodo.filter(p => p.observacoes).length / pesquisasPeriodo.length) : 0}
-          periodo={pesquisasPeriodo.length ? `${formatarData(pesquisasPeriodo[pesquisasPeriodo.length-1].dataEnvio)} a ${formatarData(pesquisasPeriodo[0].dataEnvio)}` : '-'}
+          periodo={pesquisasPeriodo.length ? `${formatarData(pesquisasPeriodo[pesquisasPeriodo.length - 1].dataEnvio)} a ${formatarData(pesquisasPeriodo[0].dataEnvio)}` : '-'}
         />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-      
+
         <button
           onClick={gerarRelatorioDetalhadoPDF}
           style={{

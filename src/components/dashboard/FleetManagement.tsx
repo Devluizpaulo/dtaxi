@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Filter, Car, Zap, Wrench, Calendar, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Car, Search, Filter, MoreVertical, MapPin, Clock, Fuel, Settings, AlertTriangle, CheckCircle, XCircle, Eye, Edit, Trash2, RefreshCw, Activity, TrendingUp, TrendingDown, Zap, Shield } from 'lucide-react';
+import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 // Mock data for fleet
 const fleetVehicles = [
@@ -22,29 +25,121 @@ const fleetVehicles = [
 ];
 
 const FleetManagement = () => {
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('todos');
+  const [activeTab, setActiveTab] = useState('ativos');
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [stats, setStats] = useState({
+    total: 0,
+    ativos: 0,
+    manutencao: 0,
+    inativos: 0,
+    disponivel: 0,
+    ocupado: 0,
+    combustivelMedio: 0,
+    kmTotal: 0
+  });
 
-  const handleSelectVehicle = (vehicle: any) => {
-    setSelectedVehicle(vehicle);
+  const fetchVehicles = async () => {
+    try {
+      setLoading(true);
+      setIsRefreshing(true);
+      const vehiclesRef = collection(db, 'vehicles');
+      const q = query(vehiclesRef, orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      
+      const vehiclesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        fuelLevel: Math.floor(Math.random() * 100), // Simulado
+        kmRodados: Math.floor(Math.random() * 50000), // Simulado
+        lastMaintenance: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Simulado
+        efficiency: Math.floor(Math.random() * 20) + 8, // km/l simulado
+        ...doc.data()
+      }));
+      
+      setVehicles(vehiclesData);
+      
+      // Calcular estatísticas
+      const combustivelMedio = vehiclesData.reduce((acc, v) => acc + (v.fuelLevel || 0), 0) / vehiclesData.length;
+      const kmTotal = vehiclesData.reduce((acc, v) => acc + (v.kmRodados || 0), 0);
+      
+      const statsData = {
+        total: vehiclesData.length,
+        ativos: vehiclesData.filter(v => v.status === 'ativo').length,
+        manutencao: vehiclesData.filter(v => v.status === 'manutencao').length,
+        inativos: vehiclesData.filter(v => v.status === 'inativo').length,
+        disponivel: vehiclesData.filter(v => v.disponibilidade === 'disponivel').length,
+        ocupado: vehiclesData.filter(v => v.disponibilidade === 'ocupado').length,
+        combustivelMedio: Math.round(combustivelMedio),
+        kmTotal
+      };
+      
+      setStats(statsData);
+    } catch (error) {
+      console.error('Erro ao buscar veículos:', error);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
   };
 
-  // Filter vehicles based on active tab and search term
-  const filteredVehicles = fleetVehicles.filter(vehicle => {
-    const matchesSearch = 
-      vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.driver.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (activeTab === 'all') return matchesSearch;
-    if (activeTab === 'active') return matchesSearch && vehicle.status === 'active';
-    if (activeTab === 'maintenance') return matchesSearch && vehicle.status === 'maintenance';
-    if (activeTab === 'electric') return matchesSearch && vehicle.type === 'electric';
-    if (activeTab === 'hybrid') return matchesSearch && vehicle.type === 'hybrid';
-    
-    return matchesSearch;
-  });
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const getFilteredVehicles = () => {
+    return vehicles.filter(vehicle => {
+      const matchesSearch = vehicle.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           vehicle.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           vehicle.motorista?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'todos' || vehicle.status === statusFilter;
+      const matchesTab = activeTab === 'todos' || 
+                        (activeTab === 'ativos' && vehicle.status === 'ativo') ||
+                        (activeTab === 'manutencao' && vehicle.status === 'manutencao') ||
+                        (activeTab === 'inativos' && vehicle.status === 'inativo');
+      
+      return matchesSearch && matchesStatus && matchesTab;
+    });
+  };
+
+  const toggleCardExpansion = (id: string) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedCards(newExpanded);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ativo': return 'bg-green-100 text-green-700 border-green-300';
+      case 'manutencao': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+      case 'inativo': return 'bg-red-100 text-red-700 border-red-300';
+      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+  };
+
+  const getAvailabilityColor = (disponibilidade: string) => {
+    switch (disponibilidade) {
+      case 'disponivel': return 'bg-blue-100 text-blue-700';
+      case 'ocupado': return 'bg-orange-100 text-orange-700';
+      case 'manutencao': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getFuelLevelColor = (level: number) => {
+    if (level > 50) return 'bg-green-500';
+    if (level > 25) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -93,56 +188,72 @@ const FleetManagement = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total de Veículos</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">325</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              60 elétricos, 168 híbridos, 97 combustão
-            </p>
+      {/* Estatísticas Interativas */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-blue-600 group-hover:scale-110 transition-transform">{stats.total}</div>
+                <p className="text-xs text-muted-foreground font-medium">Total</p>
+              </div>
+              <Car className="h-8 w-8 text-blue-500 opacity-20 group-hover:opacity-40 transition-opacity" />
+            </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Em Operação</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">285</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              87% da frota está operacional
-            </p>
+        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-green-600 group-hover:scale-110 transition-transform">{stats.ativos}</div>
+                <p className="text-xs text-muted-foreground font-medium">Ativos</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500 opacity-20 group-hover:opacity-40 transition-opacity" />
+            </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Em Manutenção</CardTitle>
-            <Wrench className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">32</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              10% da frota está em manutenção
-            </p>
+        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-yellow-600 group-hover:scale-110 transition-transform">{stats.manutencao}</div>
+                <p className="text-xs text-muted-foreground font-medium">Manutenção</p>
+              </div>
+              <Settings className="h-8 w-8 text-yellow-500 opacity-20 group-hover:opacity-40 transition-opacity" />
+            </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Alertas</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Veículos com manutenção pendente
-            </p>
+        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-red-600 group-hover:scale-110 transition-transform">{stats.inativos}</div>
+                <p className="text-xs text-muted-foreground font-medium">Inativos</p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-500 opacity-20 group-hover:opacity-40 transition-opacity" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-blue-600 group-hover:scale-110 transition-transform">{stats.combustivelMedio}%</div>
+                <p className="text-xs text-muted-foreground font-medium">Combustível</p>
+              </div>
+              <Fuel className="h-8 w-8 text-blue-500 opacity-20 group-hover:opacity-40 transition-opacity" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-purple-600 group-hover:scale-110 transition-transform">{(stats.kmTotal / 1000).toFixed(0)}k</div>
+                <p className="text-xs text-muted-foreground font-medium">KM Total</p>
+              </div>
+              <Activity className="h-8 w-8 text-purple-500 opacity-20 group-hover:opacity-40 transition-opacity" />
+            </div>
           </CardContent>
         </Card>
       </div>
