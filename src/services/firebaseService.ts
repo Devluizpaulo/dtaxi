@@ -25,6 +25,7 @@ export interface Mensagem {
   politicaPrivacidade: boolean;
   dataCriacao: Timestamp;
   dataArquivamento?: Timestamp;
+  dataResolucao?: Timestamp;
   resolvido: boolean;
   resolucao?: string;
   historico: HistoricoAcao[];

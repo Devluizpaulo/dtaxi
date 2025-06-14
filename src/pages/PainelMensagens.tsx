@@ -7,7 +7,7 @@ import { useMensagens } from '@/hooks/useMensagens';
 import { useAuth } from '@/hooks/useAuth';
 import { Mensagem } from '@/services/firebaseService';
 import { db } from '@/lib/firebase';
-import { collection, doc, setDoc, deleteDoc, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, Timestamp, getDocs } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 
 // Corrigido para corresponder ao mapeamento em useMensagens.ts
@@ -58,6 +58,38 @@ export default function PainelMensagens() {
     fetchCounts();
     return () => { ativo = false; };
   }, [mensagemSelecionada]);
+
+  // Marcar como resolvido (sem arquivar)
+  async function handleMarcarResolvido(msg: Mensagem, resolucao: string = 'Resolvido via painel') {
+    if (!user) return;
+    try {
+      const ref = doc(db, colecaoPorTipo[categoria], msg.id!);
+      
+      const mensagemAtualizada = {
+        ...msg,
+        status: 'resolvido' as const,
+        resolvido: true,
+        resolucao,
+        dataResolucao: Timestamp.now(),
+        historico: [
+          ...(msg.historico || []),
+          {
+            acao: 'resolvido',
+            usuario: { uid: user.uid, nome: user.displayName || 'Usuário' },
+            data: Timestamp.now(),
+            observacao: resolucao
+          }
+        ]
+      };
+      
+      await updateDoc(ref, mensagemAtualizada);
+      setMensagemSelecionada(null);
+      await refresh();
+    } catch (err) {
+      console.error('Erro ao marcar como resolvido:', err);
+      alert('Erro ao marcar como resolvido. Verifique o console para mais detalhes.');
+    }
+  }
 
   // Arquivar
   async function handleArquivar(msg: Mensagem) {
@@ -361,7 +393,7 @@ const formatarData = (date: Date | { toDate: () => Date } | null | undefined): s
         mensagem={mensagemSelecionada}
         open={!!mensagemSelecionada}
         onClose={() => setMensagemSelecionada(null)}
-        onMarcarResolvido={() => mensagemSelecionada && handleArquivar({ ...mensagemSelecionada, resolvido: true })}
+        onMarcarResolvido={(resolucao) => mensagemSelecionada && handleMarcarResolvido(mensagemSelecionada, resolucao)}
         onArquivar={() => mensagemSelecionada && handleArquivar(mensagemSelecionada)}
         onMigrar={() => mensagemSelecionada && handleMigrarPrompt(mensagemSelecionada)}
         onImprimir={() => mensagemSelecionada && handleImprimir(mensagemSelecionada)}

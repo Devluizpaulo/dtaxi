@@ -7,7 +7,7 @@ import {
 export const categorias = [
   { value: 'reclamacao', label: 'Reclamações', icon: AlertTriangle },
   { value: 'sugestao', label: 'Sugestões', icon: MessageCircle },
-  { value: 'informacao', label: 'Informações', icon: Info },
+  { value: 'duvida', label: 'Duvidas', icon: Info },
   { value: 'elogio', label: 'Elogios', icon: Star },
   { value: 'outro', label: 'Outros', icon: Smile },
   { value: 'arquivadas', label: 'Arquivadas', icon: ArchiveIcon },

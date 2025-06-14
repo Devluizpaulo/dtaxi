@@ -31,7 +31,7 @@ const pendingDrivers = [
 ];
 
 const DriversManagement = () => {
-  const [drivers, setDrivers] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,7 +39,7 @@ const DriversManagement = () => {
   const [activeTab, setActiveTab] = useState('ativos');
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DriverStats>({
     total: 0,
     ativos: 0,
     pendentes: 0,
@@ -153,7 +153,7 @@ const DriversManagement = () => {
     ));
   };
 
-  const handleSelectDriver = (driver: any) => {
+  const handleSelectDriver = (driver: Driver) => {
     setSelectedDriver(driver);
   };
 

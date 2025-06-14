@@ -9,11 +9,13 @@ import FAQSection from '@/components/landing/FAQSection';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import SurveyInvitationPopup from '@/components/landing/SurveyInvitationPopup';
+import CookieBanner from '@/components/landing/CookieBanner';
 
 const Index = () => {
   return (
     <BaseLayout>
       <SurveyInvitationPopup />
+      <CookieBanner />
       <HeroSection />
       <CompanyHistoryCarousel />
       <FleetSection />

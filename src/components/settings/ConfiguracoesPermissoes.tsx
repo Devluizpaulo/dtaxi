@@ -31,6 +31,13 @@ const defaultConfig = {
   modoEscuro: false,
   notificacoes: true,
   idioma: 'pt-BR',
+  popupPesquisa: {
+    ativo: true,
+    tempoExibicao: 5000,
+    frequencia: 'primeira_visita', // 'primeira_visita', 'sempre', 'nunca'
+    titulo: 'Ajude-nos a melhorar!',
+    descricao: 'Participe da nossa pesquisa de satisfação e nos ajude a melhorar ainda mais nossos serviços.',
+  },
 };
 
 const defaultUser = {
@@ -169,33 +176,6 @@ const ConfiguracoesPermissoes = () => {
     toast({ title: 'Usuário excluído!' });
   };
 
-  // Criar usuários DEV e Administrativo
-  const handleCriarEspecial = async (tipo: 'dev' | 'admin') => {
-    const senha = prompt('Defina uma senha de pelo menos 6 dígitos para o usuário ' + tipo.toUpperCase() + ':');
-    if (!senha || senha.length < 6) {
-      toast({ title: 'Senha inválida. Deve ter pelo menos 6 dígitos.' });
-      return;
-    }
-    const emailRecuperacao = prompt('Informe o email de recuperação para o usuário ' + tipo.toUpperCase() + ':');
-    if (!emailRecuperacao) {
-      toast({ title: 'Email de recuperação obrigatório.' });
-      return;
-    }
-    const email = tipo === 'dev' ? 'dev@dtaxi.com' : 'admin@dtaxi.com';
-    try {
-      // Cria no Auth
-      const cred = await createUserWithEmailAndPassword(auth, email, senha);
-      const uid = cred.user.uid;
-      const user = tipo === 'dev'
-        ? { nome: 'DEV', email, role: 'dev', permissoes: 'all', senha, emailRecuperacao }
-        : { nome: 'Administrativo', email, role: 'admin', permissoes: 'all', senha, emailRecuperacao };
-      await setDoc(doc(db, 'users', uid), user);
-      toast({ title: `Usuário ${user.nome} criado no Auth e Firestore!` });
-    } catch (err: any) {
-      toast({ title: 'Erro ao criar usuário especial', description: err.message });
-    }
-  };
-
   const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target instanceof HTMLInputElement) ? e.target.checked : undefined;
@@ -276,8 +256,6 @@ const ConfiguracoesPermissoes = () => {
             <TabsContent value="usuarios" className="space-y-6">
               <div className="flex flex-wrap gap-2 mb-4">
                 <Button size="sm" onClick={() => openUserModal()}>Novo Usuário</Button>
-                <Button size="sm" variant="outline" onClick={() => handleCriarEspecial('dev')}>Criar DEV</Button>
-                <Button size="sm" variant="outline" onClick={() => handleCriarEspecial('admin')}>Criar Administrativo</Button>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
@@ -352,6 +330,119 @@ const ConfiguracoesPermissoes = () => {
                   />
                   <label htmlFor="notificacoes" className="text-sm font-medium">Receber notificações do sistema</label>
                 </div>
+                
+                {/* Configurações do Popup de Pesquisa */}
+                <div className="border-t pt-4 mt-6">
+                  <h4 className="text-lg font-semibold mb-3">Popup de Pesquisa de Satisfação</h4>
+                  
+                  <div className="flex items-center gap-2 mb-4">
+                    <input
+                      type="checkbox"
+                      name="popupPesquisa.ativo"
+                      checked={!!config.popupPesquisa?.ativo}
+                      onChange={(e) => {
+                        setConfig(prev => ({
+                          ...prev,
+                          popupPesquisa: {
+                            ...prev.popupPesquisa,
+                            ativo: e.target.checked
+                          }
+                        }));
+                      }}
+                      id="popupAtivo"
+                    />
+                    <label htmlFor="popupAtivo" className="text-sm font-medium">Ativar popup de pesquisa</label>
+                  </div>
+                  
+                  {config.popupPesquisa?.ativo && (
+                    <div className="space-y-4 ml-6">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Frequência de exibição</label>
+                        <select
+                          value={config.popupPesquisa?.frequencia || 'primeira_visita'}
+                          onChange={(e) => {
+                            setConfig(prev => ({
+                              ...prev,
+                              popupPesquisa: {
+                                ...prev.popupPesquisa,
+                                frequencia: e.target.value
+                              }
+                            }));
+                          }}
+                          className="w-full border rounded px-3 py-2"
+                        >
+                          <option value="primeira_visita">Apenas na primeira visita</option>
+                          <option value="sempre">Sempre que acessar</option>
+                          <option value="nunca">Nunca exibir</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Tempo para exibição (segundos)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="30"
+                          value={(config.popupPesquisa?.tempoExibicao || 5000) / 1000}
+                          onChange={(e) => {
+                            setConfig(prev => ({
+                              ...prev,
+                              popupPesquisa: {
+                                ...prev.popupPesquisa,
+                                tempoExibicao: parseInt(e.target.value) * 1000
+                              }
+                            }));
+                          }}
+                          className="w-full border rounded px-3 py-2"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Título do popup</label>
+                        <input
+                          type="text"
+                          value={config.popupPesquisa?.titulo || ''}
+                          onChange={(e) => {
+                            setConfig(prev => ({
+                              ...prev,
+                              popupPesquisa: {
+                                ...prev.popupPesquisa,
+                                titulo: e.target.value
+                              }
+                            }));
+                          }}
+                          className="w-full border rounded px-3 py-2"
+                          placeholder="Título do popup"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Descrição do popup</label>
+                        <textarea
+                          value={config.popupPesquisa?.descricao || ''}
+                          onChange={(e) => {
+                            setConfig(prev => ({
+                              ...prev,
+                              popupPesquisa: {
+                                ...prev.popupPesquisa,
+                                descricao: e.target.value
+                              }
+                            }));
+                          }}
+                          className="w-full border rounded px-3 py-2 h-20 resize-none"
+                          placeholder="Descrição do popup"
+                        />
+                      </div>
+                      
+                      <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                        <p className="text-sm text-yellow-800">
+                          <strong>Nota:</strong> Para aplicar as mudanças no popup, os usuários precisarão limpar o cache do navegador ou acessar em modo anônimo.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
                 <Button onClick={handleSalvarPreferencias} className="mt-4">Salvar Preferências</Button>
               </div>
             </TabsContent>
@@ -468,4 +559,4 @@ const ConfiguracoesPermissoes = () => {
   );
 };
 
-export default ConfiguracoesPermissoes; 
+export default ConfiguracoesPermissoes;

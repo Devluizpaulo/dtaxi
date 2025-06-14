@@ -118,40 +118,27 @@ const getStatusLabel = (status: string) => {
 };
 
 const ContactMessages = () => {
-  const [messages, setMessages] = useState<{
-    id: string;
-    nome?: string;
-    email?: string;
-    assunto?: string;
-    mensagem?: string;
-    status: 'nova' | 'respondida' | 'arquivada';
-    prioridade: 'alta' | 'media' | 'baixa';
-    categoria: 'suporte' | 'reclamacao' | 'sugestao' | 'elogio';
-    satisfacao?: number;
-    tempoResposta?: number;
-    foto?: string;
-    telefone?: string;
-    createdAt?: any;
-    archivedAt?: any;
-    archivedBy?: string;
-  }[]>([]);
-  const [archivedMessages, setArchivedMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [archivedMessages, setArchivedMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todas');
   const [priorityFilter, setPriorityFilter] = useState('todas');
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
+  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [replyText, setReplyText] = useState('');
   const [activeTab, setActiveTab] = useState('ativas');
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<MessageStats>({
     total: 0,
     novas: 0,
+    pendentes: 0,
     respondidas: 0,
     arquivadas: 0,
-    satisfacaoMedia: 0,
-    tempoResposta: 0
+    elogios: 0,
+    reclamacoes: 0,
+    duvidas: 0,
+    sugestoes: 0
   });
   
   const fetchMessages = async () => {

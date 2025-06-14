@@ -21,12 +21,16 @@ interface SatisfactionData {
   dataEnvio: Date;
 }
 
-interface ReclamacaoData {
+interface ElogiosData {
   id: string;
-  nome: string;
-  tipo: string;
-  mensagem: string;
-  dataEnvio: Date;
+  name: string;
+  message: string;
+  messageType: string;
+  email: string;
+  phone: string;
+  createdAt: Date;
+  status: string;
+  vehiclePrefix: string;
 }
 
 const TestimonialsSection = () => {
@@ -44,19 +48,19 @@ const TestimonialsSection = () => {
   });
 
   const { 
-    data: reclamacoesData, 
-    loading: isLoadingReclamacoes, 
-    error: reclamacoesError 
-  } = useFirestore<ReclamacaoData>({
-    collectionName: 'reclamacoes',
+    data: elogiosData, 
+    loading: isLoadingElogios, 
+    error: elogiosError 
+  } = useFirestore<ElogiosData>({
+    collectionName: 'elogios',
     limitCount: 100
   });
 
   useEffect(() => {
-    if (!isLoadingSatisfaction && !isLoadingReclamacoes && satisfactionData && reclamacoesData) {
+    if (!isLoadingSatisfaction && !isLoadingElogios && satisfactionData && elogiosData) {
       // Processar dados de satisfação
       const satisfactionTestimonials = satisfactionData
-        .filter((item) => item.observacao && item.media >= 4)
+        .filter((item) => item.observacao && item.media >= 4 && item.nome)
         .map((item) => ({
           id: item.id,
           name: item.nome,
@@ -66,27 +70,27 @@ const TestimonialsSection = () => {
           type: 'satisfaction'
         }));
 
-      // Processar dados de reclamações (apenas elogios)
-      const reclamacoesTestimonials = reclamacoesData
-        .filter((item) => item.tipo?.toLowerCase().includes('elogio'))
+      // Processar dados de elogios
+      const elogiosTestimonials = elogiosData
+        .filter((item) => item.name && item.message && item.messageType === 'elogio')
         .map((item) => ({
           id: item.id,
-          name: item.nome,
+          name: item.name,
           rating: 5,
-          comment: item.mensagem,
-          date: item.dataEnvio instanceof Date ? item.dataEnvio.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          type: 'reclamacao'
+          comment: item.message,
+          date: item.createdAt instanceof Date ? item.createdAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          type: 'elogio'
         }));
 
       // Combinar e ordenar por data
-      const allTestimonials = [...satisfactionTestimonials, ...reclamacoesTestimonials]
+      const allTestimonials = [...satisfactionTestimonials, ...elogiosTestimonials]
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 6); // Limitar a 6 depoimentos
 
       setTestimonials(allTestimonials);
       setIsLoading(false);
     }
-  }, [satisfactionData, reclamacoesData, isLoadingSatisfaction, isLoadingReclamacoes]);
+  }, [satisfactionData, elogiosData, isLoadingSatisfaction, isLoadingElogios]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
@@ -135,11 +139,11 @@ const TestimonialsSection = () => {
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-16 h-16 rounded-full bg-taxi-yellow/20 flex items-center justify-center">
                       <span className="text-2xl font-bold text-taxi-green">
-                        {testimonial.name.charAt(0).toUpperCase()}
+                        {testimonial.name?.charAt(0)?.toUpperCase() || '?'}
                       </span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-lg">{testimonial.name}</h4>
+                      <h4 className="font-bold text-lg">{testimonial.name || 'Nome não informado'}</h4>
                       <p className="text-gray-500 text-sm">{formatDate(testimonial.date)}</p>
                     </div>
                   </div>
@@ -159,4 +163,4 @@ const TestimonialsSection = () => {
   );
 };
 
-export default TestimonialsSection; 
+export default TestimonialsSection;

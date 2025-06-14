@@ -88,7 +88,13 @@ const DriverMessaging = () => {
   };
 
   const openCardPreview = (praise: Praise) => {
-    console.log('Dados do elogio para preview:', praise); // Debug
+    // Remover esta linha:
+    // console.log('Dados do elogio para preview:', praise); // Debug
+    
+    // E substituir por um sistema de logging mais adequado se necessário:
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Dados do elogio para preview:', praise);
+    }
     setSelectedPraise(praise);
     setIsCardPreviewOpen(true);
   };

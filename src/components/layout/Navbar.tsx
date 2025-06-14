@@ -105,7 +105,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
-                key={link.href}
+                key={link.scrollTo ? `${link.href}#${link.scrollTo}` : link.href}
                 to={link.href}
                 onClick={(e) => handleNavClick(e, link)}
                 className={`relative text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-taxi-green px-1
@@ -180,7 +180,7 @@ const Navbar = () => {
               <div className="flex-1 flex flex-col gap-2 px-4 pb-6 pt-2">
                 {navLinks.map((link) => (
                   <Link
-                    key={link.href}
+                    key={link.scrollTo ? `${link.href}#${link.scrollTo}` : link.href}
                     to={link.href}
                     onClick={(e) => {
                       handleNavClick(e, link);

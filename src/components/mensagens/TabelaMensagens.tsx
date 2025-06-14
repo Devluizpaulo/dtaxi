@@ -1,4 +1,3 @@
-import { Mensagem } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
 import { formatarData } from '@/utils/formatarData';
 import { Eye, Archive, Move, Undo2, Clock, User, Mail, Phone, Hash } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Mensagem } from '@/services/firebaseService';
 
 const tipoConfig = {
   reclamacao: {
@@ -41,19 +41,23 @@ const tipoConfig = {
   }
 };
 
-const StatusBadge = ({ resolvido }: { resolvido: boolean }) => (
-  <Badge 
-    variant={resolvido ? "default" : "secondary"}
-    className={cn(
-      "text-xs font-medium",
-      resolvido 
-        ? "bg-green-100 text-green-800 border-green-300" 
-        : "bg-yellow-100 text-yellow-800 border-yellow-300"
-    )}
-  >
-    {resolvido ? '✅ Resolvido' : '⏳ Pendente'}
-  </Badge>
-);
+const StatusBadge = ({ mensagem }: { mensagem: Mensagem }) => {
+  const isResolvido = mensagem.status === 'resolvido' || mensagem.resolvido;
+  
+  return (
+    <Badge 
+      variant={isResolvido ? "default" : "secondary"}
+      className={cn(
+        "text-xs font-medium",
+        isResolvido 
+          ? "bg-green-100 text-green-800 border-green-300" 
+          : "bg-yellow-100 text-yellow-800 border-yellow-300"
+      )}
+    >
+      {isResolvido ? '✅ Resolvido' : '⏳ Pendente'}
+    </Badge>
+  );
+};
 
 const ActionButton = ({ 
   icon: Icon, 
@@ -200,7 +204,7 @@ export default function TabelaMensagens({
                       </TableCell>
                       
                       <TableCell>
-                        <StatusBadge resolvido={msg.resolvido || false} />
+                        <StatusBadge mensagem={msg} />
                       </TableCell>
                       
                       <TableCell className="text-sm text-gray-600">

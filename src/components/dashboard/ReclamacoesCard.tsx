@@ -51,8 +51,8 @@ const ReclamacoesCard = () => {
       
       const statsData = {
         total: reclamacoesData.length,
-        pendentes: reclamacoesData.filter(r => r.status === 'pendente').length,
-        resolvidas: reclamacoesData.filter(r => r.status === 'resolvida').length,
+        pendentes: reclamacoesData.filter(r => !(r.status === 'resolvido' || r.resolvido)).length,
+        resolvidas: reclamacoesData.filter(r => r.status === 'resolvido' || r.resolvido).length,
         hoje: reclamacoesData.filter(r => r.timestamp?.toDate() >= inicioHoje).length,
         alta: reclamacoesData.filter(r => r.priority === 'high').length,
         media: reclamacoesData.filter(r => r.priority === 'medium').length,
@@ -71,8 +71,11 @@ const ReclamacoesCard = () => {
   const alterarStatus = async (id: string, novoStatus: string) => {
     try {
       setAtualizando(true);
+      const isResolvido = novoStatus === 'resolvida';
       await updateDoc(doc(db, 'reclamacoes', id), {
-        status: novoStatus
+        status: isResolvido ? 'resolvido' : 'pendente',
+        resolvido: isResolvido,
+        ...(isResolvido && { dataResolucao: new Date() })
       });
       await fetchReclamacoes();
     } catch (error) {
@@ -99,7 +102,14 @@ const ReclamacoesCard = () => {
 
   const getReclamacoesFiltradas = () => {
     return reclamacoes.filter(reclamacao => {
-      const statusMatch = filtroStatus === 'todas' || reclamacao.status === filtroStatus.slice(0, -1);
+      let statusMatch = false;
+      if (filtroStatus === 'todas') {
+        statusMatch = true;
+      } else if (filtroStatus === 'resolvidas') {
+        statusMatch = reclamacao.status === 'resolvido' || reclamacao.resolvido;
+      } else if (filtroStatus === 'pendentes') {
+        statusMatch = !(reclamacao.status === 'resolvido' || reclamacao.resolvido);
+      }
       const priorityMatch = selectedPriority === 'all' || reclamacao.priority === selectedPriority;
       return statusMatch && priorityMatch;
     });
@@ -280,8 +290,8 @@ const ReclamacoesCard = () => {
                             <Badge className={cn('text-xs', priorityBadge.color)}>
                               {priorityBadge.icon} {priorityBadge.text}
                             </Badge>
-                            <Badge variant="outline" className={cn('text-xs', getStatusColor(reclamacao.status))}>
-                              {reclamacao.status === 'resolvida' ? '✅ Resolvida' : '⏳ Pendente'}
+                            <Badge variant="outline" className={cn('text-xs', getStatusColor(reclamacao.status === 'resolvido' || reclamacao.resolvido ? 'resolvida' : 'pendente'))}>
+                              {(reclamacao.status === 'resolvido' || reclamacao.resolvido) ? '✅ Resolvida' : '⏳ Pendente'}
                             </Badge>
                           </div>
                           <div className={cn(
@@ -304,11 +314,12 @@ const ReclamacoesCard = () => {
                                 className="text-xs"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  alterarStatus(reclamacao.id, reclamacao.status === 'pendente' ? 'resolvida' : 'pendente');
+                                  const isResolvido = reclamacao.status === 'resolvido' || reclamacao.resolvido;
+                                  alterarStatus(reclamacao.id, isResolvido ? 'pendente' : 'resolvida');
                                 }}
                                 disabled={atualizando}
                               >
-                                {reclamacao.status === 'pendente' ? (
+                                {!(reclamacao.status === 'resolvido' || reclamacao.resolvido) ? (
                                   <><CheckCircle className="h-3 w-3 mr-1" /> Resolver</>
                                 ) : (
                                   <><XCircle className="h-3 w-3 mr-1" /> Reabrir</>

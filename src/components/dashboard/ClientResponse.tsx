@@ -6,8 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SendHorizontal, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { db } from '@/lib/firebase';
+import { addDoc, collection, updateDoc, doc } from 'firebase/firestore';
 
 interface Feedback {
+  id?: string;
   name: string;
   email: string;
   telefone?: string;
@@ -22,6 +26,7 @@ interface ClientResponseProps {
 
 const ClientResponse: React.FC<ClientResponseProps> = ({ feedback, onClose }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [responseMethod, setResponseMethod] = useState<'email' | 'whatsapp'>('email');
   const [responseText, setResponseText] = useState('');
   const [sending, setSending] = useState(false);
@@ -47,30 +52,55 @@ const ClientResponse: React.FC<ClientResponseProps> = ({ feedback, onClose }) =>
   const handleSendResponse = async () => {
     if (!responseText.trim()) {
       toast({
-        title: 'Mensagem vazia',
-        description: 'Por favor, insira um texto para a resposta.',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Digite uma resposta antes de enviar",
+        variant: "destructive"
       });
       return;
     }
 
-    setSending(true);
+    if (!feedback.id) {
+      toast({
+        title: "Erro",
+        description: "ID da mensagem não encontrado",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
-      // TODO: Implementar envio real via backend/API/Firebase
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setSending(true);
+      
+      // Implementação real do envio
+      const responseData = {
+        messageId: feedback.id,
+        response: responseText,
+        method: responseMethod,
+        timestamp: new Date(),
+        userId: user?.uid || 'anonymous'
+      };
+
+      // Salvar resposta no Firestore
+      await addDoc(collection(db, 'message_responses'), responseData);
+      
+      // Atualizar status da mensagem
+      await updateDoc(doc(db, 'messages', feedback.id), {
+        status: 'respondido',
+        respondedAt: new Date(),
+        respondedBy: user?.uid || 'anonymous'
+      });
 
       toast({
-        title: 'Resposta enviada',
-        description: `Sua resposta foi enviada para ${feedback.name} via ${responseMethod === 'email' ? 'e-mail' : 'WhatsApp/SMS'}.`,
+        title: "Sucesso",
+        description: "Resposta enviada com sucesso!"
       });
       onClose();
     } catch (error) {
       console.error('Erro ao enviar resposta:', error);
       toast({
-        title: 'Erro ao enviar',
-        description: 'Não foi possível enviar a resposta. Tente novamente.',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Erro ao enviar resposta. Tente novamente.",
+        variant: "destructive"
       });
     } finally {
       setSending(false);

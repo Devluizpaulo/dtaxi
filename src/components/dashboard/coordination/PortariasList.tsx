@@ -4,8 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { X, Eye, Plus, Trash2, Printer, Download } from 'lucide-react';
 import PortariaModal from './PortariaModal';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
+import html2pdf from 'html2pdf.js'; // Agora com tipos adequados
 import { Documento } from './types';
 
 interface PortariasListProps {
@@ -163,4 +162,4 @@ const PortariasList: React.FC<PortariasListProps> = ({ documentos, onEdit, onDel
   );
 };
 
-export default PortariasList; 
+export default PortariasList;
