@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -13,24 +13,26 @@ const SurveyInvitationPopup = () => {
   });
   const { hasConsentFor } = useCookieConsent();
 
-  // Pegar a primeira configuração ou usar valores padrão
-  const config = configData[0] || {
-    popupPesquisa: {
+  // Memoizar a configuração para evitar recriações desnecessárias
+  const popupConfig = useMemo(() => {
+    const config = configData[0] || {
+      popupPesquisa: {
+        ativo: true,
+        tempoExibicao: 5000,
+        frequencia: 'primeira_visita',
+        titulo: 'Ajude-nos a melhorar!',
+        descricao: 'Participe da nossa pesquisa de satisfação e nos ajude a melhorar ainda mais nossos serviços.',
+      }
+    };
+
+    return config.popupPesquisa || {
       ativo: true,
       tempoExibicao: 5000,
       frequencia: 'primeira_visita',
       titulo: 'Ajude-nos a melhorar!',
       descricao: 'Participe da nossa pesquisa de satisfação e nos ajude a melhorar ainda mais nossos serviços.',
-    }
-  };
-
-  const popupConfig = config.popupPesquisa || {
-    ativo: true,
-    tempoExibicao: 5000,
-    frequencia: 'primeira_visita',
-    titulo: 'Ajude-nos a melhorar!',
-    descricao: 'Participe da nossa pesquisa de satisfação e nos ajude a melhorar ainda mais nossos serviços.',
-  };
+    };
+  }, [configData]);
 
   useEffect(() => {
     // Não exibir se estiver desativado
@@ -67,7 +69,7 @@ const SurveyInvitationPopup = () => {
     }, popupConfig.tempoExibicao || 5000);
 
     return () => clearTimeout(timer);
-  }, [popupConfig]);
+  }, [popupConfig.ativo, popupConfig.frequencia, popupConfig.tempoExibicao, hasConsentFor]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

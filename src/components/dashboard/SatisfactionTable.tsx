@@ -222,13 +222,7 @@ const SatisfactionTable: React.FC<SatisfactionTableProps> = ({
                         >
                           <FaEye size={14} />
                         </button>
-                        <button
-                          className="action-button expand-button"
-                          onClick={() => setExpanded(isExpanded ? null : p.id)}
-                          title={isExpanded ? "Recolher detalhes" : "Expandir detalhes"}
-                        >
-                          {isExpanded ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
-                        </button>
+                        
                       </div>
                     </td>
                   </tr>
@@ -284,7 +278,7 @@ const SatisfactionTable: React.FC<SatisfactionTableProps> = ({
         </table>
       </div>
       
-      <style jsx>{`
+      <style>{`
         .satisfaction-table-container {
           background: #ffffff;
           border-radius: 16px;
