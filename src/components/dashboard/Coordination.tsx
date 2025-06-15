@@ -109,8 +109,6 @@ const Coordination = () => {
       printWindow!.print();
     }
   }
-
-  // Render
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -118,9 +116,6 @@ const Coordination = () => {
           <h2 className="text-3xl font-bold tracking-tight">Coordenação</h2>
           <p className="text-muted-foreground">Gerenciamento de coordenadores e suas regiões de atuação</p>
         </div>
-        {temPermissao('coordenadores:criar') && (
-        <Button onClick={() => { setCoordEdit(null); setShowCoordModal(true); }}>Adicionar Coordenador</Button>
-        )}
       </div>
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList
@@ -273,24 +268,24 @@ const Coordination = () => {
             />
           )}
           {tipoSelecionado && tipoSelecionado !== 'Ata' && tipoSelecionado !== 'Relatório' && (
-          <DocumentoModal
-            tipo={tipoSelecionado || ''}
-            documento={docEdit}
-            open={showDocModal && !!tipoSelecionado}
-            onSave={async novoDoc => {
-              if (docEdit) {
+            <DocumentoModal
+              tipo={tipoSelecionado || ''}
+              documento={docEdit}
+              open={showDocModal && !!tipoSelecionado}
+              onSave={async novoDoc => {
+                if (docEdit) {
                   await updateDocumento(docEdit.id, { ...novoDoc, tipo: tipoSelecionado });
-              } else {
+                } else {
                   await addDocumento({ ...novoDoc, tipo: tipoSelecionado });
-              }
-              setShowDocModal(false);
-              setTipoSelecionado(null);
-              setDocEdit(null);
-              toast({ title: 'Documento salvo com sucesso!' });
-            }}
-            onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
+                }
+                setShowDocModal(false);
+                setTipoSelecionado(null);
+                setDocEdit(null);
+                toast({ title: 'Documento salvo com sucesso!' });
+              }}
+              onCancel={() => { setShowDocModal(false); setTipoSelecionado(null); setDocEdit(null); }}
               loading={documentosLoading}
-          />
+            />
           )}
         </TabsContent>
         <TabsContent value="comunicados" className="space-y-4 px-1 sm:px-0">

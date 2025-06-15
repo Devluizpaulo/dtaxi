@@ -163,7 +163,7 @@ const ContactMessages = () => {
       
       setMessages(messagesData.map(msg => ({
         ...msg,
-        status: msg.status || 'nova',
+        status: (msg as any).status || 'nova',
         prioridade: msg.prioridade as 'baixa' | 'media' | 'alta',
         categoria: msg.categoria as 'suporte' | 'reclamacao' | 'sugestao' | 'elogio'
       })));

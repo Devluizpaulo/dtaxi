@@ -1,9 +1,12 @@
-
 import React from 'react';
-import DashboardOverview from '@/components/dashboard/DashboardOverview';
+import DashboardOverview from '../components/dashboard/dashboardoverview';
 
-const Dashboard = () => {
-  return <DashboardOverview />;
+const Dashboard: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      <DashboardOverview />
+    </div>
+  );
 };
 
 export default Dashboard;

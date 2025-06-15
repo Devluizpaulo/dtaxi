@@ -1,21 +1,21 @@
 import React from 'react';
-import ConfiguracoesPermissoes from '@/components/settings/ConfiguracoesPermissoes';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import ConfiguracoesPermissoes from '../components/settings/ConfiguracoesPermissoes';
 
 const DashboardConfiguracoes: React.FC = () => {
   return (
-    <div className="max-w-4xl mx-auto py-8 px-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Configurações do Painel</CardTitle>
-          <CardDescription>Gerencie permissões de acesso e preferências do sistema.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ConfiguracoesPermissoes />
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+          <p className="text-muted-foreground">
+            Gerencie configurações do sistema, usuários e permissões
+          </p>
+        </div>
+      </div>
+      
+      <ConfiguracoesPermissoes />
     </div>
   );
 };
 
-export default DashboardConfiguracoes; 
+export default DashboardConfiguracoes;

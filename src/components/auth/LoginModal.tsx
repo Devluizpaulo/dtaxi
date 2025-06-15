@@ -33,7 +33,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         description: "Bem-vindo ao Dashboard.",
       });
       onClose();
-      navigate('/dashboard');
+      navigate('/dashboard/mensagens');
     } catch (error: any) {
       toast({
         title: "Erro ao fazer login",
