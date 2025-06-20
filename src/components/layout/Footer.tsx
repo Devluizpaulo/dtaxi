@@ -18,13 +18,13 @@ const Footer = () => {
             <p className="text-gray-300 mb-4">
               Mobilidade inteligente e transporte sustentável desde 1969.
             </p>
-            //<div className="flex space-x-4">
-              //<SocialIcon icon={Facebook} />
-              //<SocialIcon icon={Instagram} />
-              //<SocialIcon icon={Twitter} />
-              //<SocialIcon icon={Linkedin} />
-            //</div>
-          </div>
+            {/* <div className="flex space-x-4">
+                <SocialIcon icon={Facebook} />
+                <SocialIcon icon={Instagram} />
+                <SocialIcon icon={Twitter} />
+                <SocialIcon icon={Linkedin} />
+              </div> */}
+           </div>
 
           <div>
             <h4 className="font-bold text-lg mb-4">Endereço</h4>
