@@ -119,25 +119,9 @@ export const PraiseCard: React.FC<PraiseCardProps> = ({
                         }}
                     >
                         <ImageIcon className="h-3 w-3 mr-1" />
-                        Card
+                        Gerar Card de elogio
                     </Button>
-                    <Button
-                        size="sm"
-                        className={cn(
-                            "flex-1 h-8 text-xs transition-all shadow-sm",
-                            praise.isProcessed
-                                ? 'bg-green-500 hover:bg-green-600 text-white'
-                                : 'bg-blue-500 hover:bg-blue-600 text-white'
-                        )}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onSendClick(praise);
-                        }}
-                    >
-                        <SendHorizontal className="h-3 w-3 mr-1" />
-                        {praise.isProcessed ? 'Reenviar' : 'Enviar'}
-                    </Button>
-                </div>
+                 </div>
             </CardContent>
         </Card>
     );
