@@ -22,13 +22,6 @@ export const DriverMessagingHeader: React.FC<DriverMessagingHeaderProps> = ({
           Envie mensagens carinhosas de reconhecimento aos motoristas
         </p>
       </div>
-      <Button 
-        onClick={onCreateClick}
-        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg transition-all duration-200"
-      >
-        <PlusCircle className="mr-2 h-4 w-4" />
-        Criar Novo Elogio
-      </Button>
     </div>
   );
 };
