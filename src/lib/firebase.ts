@@ -5,14 +5,15 @@ import { getStorage } from 'firebase/storage';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBG_O5NYSVqK6Dt5wpMRGHcBhwPcgwqqZ0",
-  authDomain: "dtaxisp1234.firebaseapp.com",
-  projectId: "dtaxisp1234",
-  storageBucket: "dtaxisp1234.firebasestorage.app",
-  messagingSenderId: "340013543609",
-  appId: "1:340013543609:web:f2bf0e941ca53545976b68",
-  measurementId: "G-R7KXRJHXRD"
+  apiKey: "AIzaSyDA8t1v8IhN8HjicX0xvVS8GVCvZXesr2A",
+  authDomain: "dtaxisp.firebaseapp.com",
+  projectId: "dtaxisp",
+  storageBucket: "dtaxisp.firebasestorage.app",
+  messagingSenderId: "86958884423",
+  appId: "1:86958884423:web:2f8292b6d514e999241362",
+  measurementId: "G-0D7SZ1CQTG"
 };
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
