@@ -9,7 +9,7 @@ const colecaoPorTipo: Record<string, string> = {
   informacao: 'informacoes',
   elogio: 'elogios',
   duvida: 'duvidas',
-  outro: 'outras-mensagens',
+  outro: 'reclamacoes-arquivadas',
   arquivadas: 'arquivadas',
 };
 
