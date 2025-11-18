@@ -29,6 +29,13 @@ const ReclamacoesCard = () => {
     baixa: 0
   });
 
+  const getTimestampDate = (timestamp: any): Date | null => {
+    if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp) {
+      return timestamp.toDate();
+    }
+    return timestamp instanceof Date ? timestamp : null;
+  };
+
   const fetchReclamacoes = async () => {
     try {
       setLoading(true);
@@ -37,11 +44,25 @@ const ReclamacoesCard = () => {
       const q = query(reclamacoesRef, orderBy('timestamp', 'desc'), limit(20));
       const snapshot = await getDocs(q);
       
-      const reclamacoesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        priority: 'medium', // Prioridade padrão
-        ...doc.data()
-      }));
+      const reclamacoesData = snapshot.docs.map(doc => {
+        const data: any = doc.data();
+
+        return {
+          id: doc.id,
+          priority: 'medium', // Prioridade padrão
+          ...data,
+          // Normalizar campos vindos do Firestore para o formato usado pelo componente
+          mensagem: data.mensagem || data.message,
+          timestamp: data.timestamp || data.createdAt,
+          usuario: data.usuario || {
+            nome: data.name,
+            email: data.email,
+            telefone: data.phone,
+          },
+          protocolo: data.protocolo,
+          vehiclePrefix: data.vehiclePrefix,
+        };
+      });
       
       setReclamacoes(reclamacoesData);
       
@@ -53,7 +74,10 @@ const ReclamacoesCard = () => {
         total: reclamacoesData.length,
         pendentes: reclamacoesData.filter(r => !(r.status === 'resolvido' || r.resolvido)).length,
         resolvidas: reclamacoesData.filter(r => r.status === 'resolvido' || r.resolvido).length,
-        hoje: reclamacoesData.filter(r => r.timestamp?.toDate() >= inicioHoje).length,
+        hoje: reclamacoesData.filter(r => {
+          const data = getTimestampDate(r.timestamp);
+          return data ? data >= inicioHoje : false;
+        }).length,
         alta: reclamacoesData.filter(r => r.priority === 'high').length,
         media: reclamacoesData.filter(r => r.priority === 'medium').length,
         baixa: reclamacoesData.filter(r => r.priority === 'low').length
@@ -87,7 +111,10 @@ const ReclamacoesCard = () => {
 
   const exportarDados = () => {
     const dados = getReclamacoesFiltradas();
-    const csv = dados.map(r => `${r.usuario?.nome || 'N/A'},${r.mensagem},${r.status},${format(r.timestamp?.toDate() || new Date(), 'dd/MM/yyyy HH:mm')}`).join('\n');
+    const csv = dados.map(r => {
+      const data = getTimestampDate(r.timestamp) || new Date();
+      return `${r.usuario?.nome || 'N/A'},${r.mensagem},${r.status},${format(data, 'dd/MM/yyyy HH:mm')}`;
+    }).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -101,18 +128,25 @@ const ReclamacoesCard = () => {
   }, []);
 
   const getReclamacoesFiltradas = () => {
-    return reclamacoes.filter(reclamacao => {
-      let statusMatch = false;
-      if (filtroStatus === 'todas') {
-        statusMatch = true;
-      } else if (filtroStatus === 'resolvidas') {
-        statusMatch = reclamacao.status === 'resolvido' || reclamacao.resolvido;
-      } else if (filtroStatus === 'pendentes') {
-        statusMatch = !(reclamacao.status === 'resolvido' || reclamacao.resolvido);
-      }
-      const priorityMatch = selectedPriority === 'all' || reclamacao.priority === selectedPriority;
-      return statusMatch && priorityMatch;
-    });
+    return reclamacoes
+      .filter(reclamacao => {
+        let statusMatch = false;
+        if (filtroStatus === 'todas') {
+          statusMatch = true;
+        } else if (filtroStatus === 'resolvidas') {
+          statusMatch = reclamacao.status === 'resolvido' || reclamacao.resolvido;
+        } else if (filtroStatus === 'pendentes') {
+          statusMatch = !(reclamacao.status === 'resolvido' || reclamacao.resolvido);
+        }
+        const priorityMatch = selectedPriority === 'all' || reclamacao.priority === selectedPriority;
+        return statusMatch && priorityMatch;
+      })
+      .sort((a, b) => {
+        const dataA = getTimestampDate(a.timestamp)?.getTime() || 0;
+        const dataB = getTimestampDate(b.timestamp)?.getTime() || 0;
+        // Mais recentes primeiro
+        return dataB - dataA;
+      });
   };
 
   const toggleCardExpansion = (id: string) => {
@@ -259,12 +293,15 @@ const ReclamacoesCard = () => {
                 const isCardExpanded = expandedCards.has(reclamacao.id);
                 const priorityBadge = getPriorityBadge(reclamacao.priority);
                 
+                const isPendente = !(reclamacao.status === 'resolvido' || reclamacao.resolvido);
+
                 return (
                   <div 
                     key={reclamacao.id} 
                     className={cn(
                       'p-4 rounded-lg border-l-4 transition-all duration-300 hover:shadow-md cursor-pointer group',
                       getPriorityColor(reclamacao.priority),
+                      isPendente && 'border-red-500 ring-1 ring-red-300 animate-pulse',
                       'hover:scale-[1.01]'
                     )}
                     style={{ animationDelay: `${index * 100}ms` }}
@@ -338,7 +375,7 @@ const ReclamacoesCard = () => {
                           
                           <div className="flex items-center justify-between mt-2">
                             <p className="text-xs text-gray-500 font-medium">
-                              {format(reclamacao.timestamp?.toDate() || new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                              {format(getTimestampDate(reclamacao.timestamp) || new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                             </p>
                             <div className="flex items-center gap-1">
                               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>

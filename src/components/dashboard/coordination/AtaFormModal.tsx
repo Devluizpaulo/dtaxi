@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { X, Printer, Download } from 'lucide-react';
 import { Coordenador, Documento } from './types';
@@ -31,16 +32,21 @@ const camposIniciais = (doc?: Documento | null) => ({
   votosNao: doc?.votosNao || '',
   votosAbstencao: doc?.votosAbstencao || '',
   resultadoVotacao: doc?.resultadoVotacao || '',
+  votos2Sim: doc?.votos2Sim || '',
+  votos2Nao: doc?.votos2Nao || '',
+  votos2Abstencao: doc?.votos2Abstencao || '',
+  resultadoVotacao2: doc?.resultadoVotacao2 || '',
   resultadoFinal: doc?.resultadoFinal || '',
   encerramento: doc?.encerramento || '',
   dataAssinatura: doc?.dataAssinatura || '',
+  hasSecondRound: !!(doc?.votos2Sim || doc?.votos2Nao || doc?.votos2Abstencao || doc?.resultadoVotacao2),
 });
 
 const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coordenadores, documento, loading }) => {
   const [step, setStep] = useState<'form' | 'review'>('form');
   const [fields, setFields] = useState(camposIniciais(documento));
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFields(camposIniciais(documento));
     setStep('form');
   }, [documento, open]);
@@ -54,6 +60,14 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
   const votosSim = Math.max(0, Math.min(Number(fields.votosSim) || 0, totalVotantes));
   const votosNao = Math.max(0, Math.min(Number(fields.votosNao) || 0, totalVotantes));
   const votosAbstencao = Math.max(0, Math.min(Number(fields.votosAbstencao) || 0, totalVotantes));
+  const somaVotos = votosSim + votosNao + votosAbstencao;
+  const votosRestantes = Math.max(0, totalVotantes - somaVotos);
+
+  // Segundo turno: aplicar mesma lógica, mas só se algum campo estiver preenchido
+  const votos2Sim = Math.max(0, Math.min(Number(fields.votos2Sim) || 0, totalVotantes));
+  const votos2Nao = Math.max(0, Math.min(Number(fields.votos2Nao) || 0, totalVotantes));
+  const votos2Abstencao = Math.max(0, Math.min(Number(fields.votos2Abstencao) || 0, totalVotantes));
+  const somaVotos2 = votos2Sim + votos2Nao + votos2Abstencao;
 
   const ataTexto = useMemo(() => {
     const unidades = fields.unidades.map((u: any, i: number) =>
@@ -68,8 +82,47 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
     if (membrosConvidados.length > 0) {
       agradecimento = `\nAgradecemos a presença dos convidados: ${membrosConvidados.join(', ')}.`;
     }
-    return `D-TAXI SP\nATA DA REUNIÃO DA COMISSÃO DE ÉTICA\n\nAta da Reunião da Comissão de Ética da D-Taxi SP\n\nData: ${fields.data}\nLocal: ${fields.local}\nPresidente: ${fields.presidente}\n${unidades ? 'Unidades Envolvidas:\n' + unidades : ''}\nMembros Presentes da Comissão: ${membrosLinha}\n${agradecimento}\n\n1. Abertura da Reunião\n    ${fields.abertura}\n\n2. Relato dos Casos\n    ${fields.relato}\n\n3. Discussão das Medidas\n    ${fields.discussao}\n\n4. Votação da Medida\n    Medida votada: ${fields.medidaVotada}\n    Número de votos - Sim: ${votosSim}, Não: ${votosNao}, Abstenções: ${votosAbstencao}\n    Total de votantes: ${totalVotantes}\n    Resultado da Votação: ${fields.resultadoVotacao}\n\n5. Resultado Final\n    ${fields.resultadoFinal}\n\n6. Encerramento\n    ${fields.encerramento}\n\nSão Paulo, ${fields.dataAssinatura || fields.data}`;
-  }, [fields, membrosPresentes, membrosConvidados, votosSim, votosNao, votosAbstencao, totalVotantes]);
+    const blocoSegundoTurno = somaVotos2 > 0 || fields.resultadoVotacao2
+      ? `\n    Segundo turno de votação (se aplicável):\n    Número de votos - Sim: ${votos2Sim}, Não: ${votos2Nao}, Abstenções: ${votos2Abstencao}\n    Resultado do Segundo Turno: ${fields.resultadoVotacao2 || ''}`
+      : '';
+
+    return `D-TAXI SP\nATA DA REUNIÃO DA COMISSÃO DE ÉTICA\n\nAta da Reunião da Comissão de Ética da D-Taxi SP\n\nData: ${fields.data}\nLocal: ${fields.local}\nPresidente: ${fields.presidente}\n${unidades ? 'Unidades Envolvidas:\n' + unidades : ''}\nMembros Presentes da Comissão: ${membrosLinha}\n${agradecimento}\n\n1. Abertura da Reunião\n    ${fields.abertura}\n\n2. Relato dos Casos\n    ${fields.relato}\n\n3. Discussão das Medidas\n    ${fields.discussao}\n\n4. Votação da Medida\n    Medida votada: ${fields.medidaVotada}\n    Número de votos - Sim: ${votosSim}, Não: ${votosNao}, Abstenções: ${votosAbstencao}\n    Total de votantes: ${totalVotantes}\n    Resultado da Votação: ${fields.resultadoVotacao}${blocoSegundoTurno}\n\n5. Resultado Final\n    ${fields.resultadoFinal}\n\n6. Encerramento\n    ${fields.encerramento}\n\nSão Paulo, ${fields.dataAssinatura || fields.data}`;
+  }, [fields, membrosPresentes, membrosConvidados, votosSim, votosNao, votosAbstencao, votos2Sim, votos2Nao, votos2Abstencao, somaVotos2, totalVotantes]);
+
+  // Preencher automaticamente um resumo padrão do resultado da votação
+  useEffect(() => {
+    if (!totalVotantes || !fields.medidaVotada) return;
+    if (somaVotos !== totalVotantes) return; // só quando a soma bate com o total
+
+    const simPct = totalVotantes ? Math.round((votosSim / totalVotantes) * 100) : 0;
+    const naoPct = totalVotantes ? Math.round((votosNao / totalVotantes) * 100) : 0;
+    const abstPct = totalVotantes ? Math.round((votosAbstencao / totalVotantes) * 100) : 0;
+
+    const aprovado = votosSim > votosNao;
+    const status = aprovado ? 'APROVADA' : votosSim === votosNao ? 'EMPATADA' : 'REJEITADA';
+
+    const textoAuto = `Medida "${fields.medidaVotada}" ${status} por ${votosSim} voto(s) SIM (${simPct}%), ${votosNao} NÃO (${naoPct}%) e ${votosAbstencao} abstenção(ões) (${abstPct}%), de um total de ${totalVotantes} votante(s).`;
+
+    // Só preencher automaticamente se o campo ainda estiver vazio
+    setFields(f => f.resultadoVotacao ? f : { ...f, resultadoVotacao: textoAuto });
+  }, [somaVotos, totalVotantes, votosSim, votosNao, votosAbstencao, fields.medidaVotada]);
+
+  // Segundo turno: preencher automaticamente, se houver votos lançados e soma bater
+  useEffect(() => {
+    if (!totalVotantes || !(votos2Sim || votos2Nao || votos2Abstencao)) return;
+    if (somaVotos2 !== totalVotantes) return;
+
+    const simPct = totalVotantes ? Math.round((votos2Sim / totalVotantes) * 100) : 0;
+    const naoPct = totalVotantes ? Math.round((votos2Nao / totalVotantes) * 100) : 0;
+    const abstPct = totalVotantes ? Math.round((votos2Abstencao / totalVotantes) * 100) : 0;
+
+    const aprovado = votos2Sim > votos2Nao;
+    const status = aprovado ? 'APROVADA' : votos2Sim === votos2Nao ? 'EMPATADA' : 'REJEITADA';
+
+    const textoAuto = `No segundo turno, a medida foi ${status} por ${votos2Sim} voto(s) SIM (${simPct}%), ${votos2Nao} NÃO (${naoPct}%) e ${votos2Abstencao} abstenção(ões) (${abstPct}%), de um total de ${totalVotantes} votante(s).`;
+
+    setFields(f => f.resultadoVotacao2 ? f : { ...f, resultadoVotacao2: textoAuto });
+  }, [somaVotos2, totalVotantes, votos2Sim, votos2Nao, votos2Abstencao]);
 
   // Geração do HTML para PDF (ABNT, texto justificado)
   const ataHtmlForPdf = useMemo(() => {
@@ -85,6 +138,10 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
     if (membrosConvidados.length > 0) {
       agradecimento = `<br/><span style='font-style:italic;'>Agradecemos a presença dos convidados: ${membrosConvidados.join(', ')}.</span>`;
     }
+    const blocoSegundoTurno = somaVotos2 > 0 || fields.resultadoVotacao2
+      ? `<br/><b>Segundo turno de votação (se aplicável):</b><br/>Número de votos - Sim: ${votos2Sim}, Não: ${votos2Nao}, Abstenções: ${votos2Abstencao}<br/>Resultado do Segundo Turno: ${fields.resultadoVotacao2 || ''}`
+      : '';
+
     return `
       <div style="font-family: Times New Roman, serif; font-size: 14pt; margin: 3cm 2cm 2cm 3cm; line-height: 1.5; color: #222; text-align: justify;">
         <div style="text-align: center; font-weight: bold; font-size: 16pt; margin-bottom: 1.5em;">D-TAXI SP</div>
@@ -100,6 +157,7 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
         <div style="margin-bottom: 1em;"><b>2. Relato dos Casos</b><br/><span style="margin-left:2em;">${fields.relato}</span></div>
         <div style="margin-bottom: 1em;"><b>3. Discussão das Medidas</b><br/><span style="margin-left:2em;">${fields.discussao}</span></div>
         <div style="margin-bottom: 1em;"><b>4. Votação da Medida</b><br/><span style="margin-left:2em;">Medida votada: ${fields.medidaVotada}<br/>Número de votos - Sim: ${votosSim}, Não: ${votosNao}, Abstenções: ${votosAbstencao}<br/>Total de votantes: ${totalVotantes}<br/>Resultado da Votação: ${fields.resultadoVotacao}</span></div>
+        ${blocoSegundoTurno}
         <div style="margin-bottom: 1em;"><b>5. Resultado Final</b><br/><span style="margin-left:2em;">${fields.resultadoFinal}</span></div>
         <div style="margin-bottom: 1em;"><b>6. Encerramento</b><br/><span style="margin-left:2em;">${fields.encerramento}</span></div>
         <div style="margin: 2em 0 1em 0;">São Paulo, ${fields.dataAssinatura || fields.data}</div>
@@ -125,7 +183,7 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
         </div>
       </div>
     `;
-  }, [fields, membrosPresentes, membrosConvidados, votosSim, votosNao, votosAbstencao, totalVotantes]);
+  }, [fields, membrosPresentes, membrosConvidados, votosSim, votosNao, votosAbstencao, votos2Sim, votos2Nao, votos2Abstencao, somaVotos2, totalVotantes]);
 
   // PDF download (ABNT)
   const handleDownloadPDF = () => {
@@ -162,6 +220,7 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
     const { name, value } = e.target;
     setFields(f => ({ ...f, [name]: value }));
   };
+
   // Unidades
   const handleUnidadeChange = (idx: number, campo: string, value: string) => {
     setFields(f => {
@@ -180,6 +239,7 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
       return { ...f, unidades: arr };
     });
   };
+
   // Membros presentes
   const handlePresenteToggle = (id: string, nome: string) => {
     setFields(f => f.membrosPresentes.includes(nome)
@@ -205,6 +265,19 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
     });
   };
 
+  const toggleSecondRound = () => {
+    setFields(f => {
+      const next = { ...f, hasSecondRound: !f.hasSecondRound };
+      if (!next.hasSecondRound) {
+        next.votos2Sim = '';
+        next.votos2Nao = '';
+        next.votos2Abstencao = '';
+        next.resultadoVotacao2 = '';
+      }
+      return next;
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStep('review');
@@ -227,6 +300,10 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
       votosNao: fields.votosNao,
       votosAbstencao: fields.votosAbstencao,
       resultadoVotacao: fields.resultadoVotacao,
+      votos2Sim: fields.votos2Sim,
+      votos2Nao: fields.votos2Nao,
+      votos2Abstencao: fields.votos2Abstencao,
+      resultadoVotacao2: fields.resultadoVotacao2,
       resultadoFinal: fields.resultadoFinal,
       encerramento: fields.encerramento,
       dataAssinatura: fields.dataAssinatura || fields.data,
@@ -237,7 +314,7 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
-      <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-2xl relative animate-fadeIn overflow-y-auto max-h-[95vh]">
+      <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-3xl lg:max-w-4xl relative animate-fadeIn overflow-y-auto max-h-[95vh]">
         <button
           className="absolute top-3 right-3 text-gray-400 hover:text-red-500 focus:outline-none"
           onClick={onCancel}
@@ -336,10 +413,101 @@ const AtaFormModal: React.FC<AtaFormModalProps> = ({ open, onCancel, onSave, coo
                 <span className="text-sm font-semibold text-taxi-green">Abstenções</span>
                 <input name="votosAbstencao" type="number" value={fields.votosAbstencao} onChange={handleChange} required className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition" />
               </label>
+              <div className="sm:col-span-2 text-xs text-gray-600 bg-gray-50 border border-dashed border-taxi-green/30 rounded-lg p-3 space-y-1">
+                <div>
+                  <span className="font-semibold">Participantes com direito a voto:</span> {totalVotantes}
+                </div>
+                <div>
+                  <span className="font-semibold">Distribuição atual:</span> {votosSim} sim, {votosNao} não, {votosAbstencao} abstenção(ões) (total {somaVotos}).
+                </div>
+                {totalVotantes > 0 && somaVotos < totalVotantes && (
+                  <div className="text-amber-700">
+                    Faltam registrar {totalVotantes - somaVotos} voto(s) para fechar o total de {totalVotantes}.
+                  </div>
+                )}
+                {somaVotos > totalVotantes && (
+                  <div className="text-red-700">
+                    A soma dos votos ({somaVotos}) está maior que o total de votantes ({totalVotantes}). Verifique os números.
+                  </div>
+                )}
+                {fields.hasSecondRound && (somaVotos2 > 0 || fields.resultadoVotacao2) && (
+                  <div className="text-emerald-700">
+                    O resultado final considera também o 2º turno de votação.
+                  </div>
+                )}
+              </div>
               <label className="block sm:col-span-2">
                 <span className="text-sm font-semibold text-taxi-green">Resultado da Votação</span>
                 <input name="resultadoVotacao" value={fields.resultadoVotacao} onChange={handleChange} required className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition" />
               </label>
+            </div>
+            <div className="mt-4 space-y-2">
+              <label className="flex items-center gap-2 text-sm text-taxi-green">
+                <input
+                  type="checkbox"
+                  checked={fields.hasSecondRound}
+                  onChange={toggleSecondRound}
+                />
+                <span>Houve segundo turno de votação?</span>
+              </label>
+              {fields.hasSecondRound && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border border-taxi-green/30 rounded-lg p-3 bg-emerald-50/40">
+                  <label className="block">
+                    <span className="text-sm font-semibold text-taxi-green">2º turno - Votos Sim</span>
+                    <input
+                      name="votos2Sim"
+                      type="number"
+                      value={fields.votos2Sim}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-taxi-green">2º turno - Votos Não</span>
+                    <input
+                      name="votos2Nao"
+                      type="number"
+                      value={fields.votos2Nao}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-taxi-green">2º turno - Abstenções</span>
+                    <input
+                      name="votos2Abstencao"
+                      type="number"
+                      value={fields.votos2Abstencao}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition"
+                    />
+                  </label>
+                  <div className="sm:col-span-2 text-xs text-gray-700 space-y-1">
+                    <div>
+                      <span className="font-semibold">2º turno - distribuição:</span> {votos2Sim} sim, {votos2Nao} não, {votos2Abstencao} abstenção(ões) (total {somaVotos2}).
+                    </div>
+                    {totalVotantes > 0 && somaVotos2 < totalVotantes && (
+                      <div className="text-amber-700">
+                        Faltam registrar {totalVotantes - somaVotos2} voto(s) para fechar o total de {totalVotantes} no 2º turno.
+                      </div>
+                    )}
+                    {somaVotos2 > totalVotantes && (
+                      <div className="text-red-700">
+                        A soma dos votos do 2º turno ({somaVotos2}) está maior que o total de votantes ({totalVotantes}). Verifique os números.
+                      </div>
+                    )}
+                  </div>
+                  <label className="block sm:col-span-2">
+                    <span className="text-sm font-semibold text-taxi-green">Resultado do 2º Turno</span>
+                    <input
+                      name="resultadoVotacao2"
+                      value={fields.resultadoVotacao2}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition"
+                    />
+                  </label>
+                </div>
+              )}
             </div>
             <label className="block">
               <span className="text-sm font-semibold text-taxi-green">Resultado Final</span>

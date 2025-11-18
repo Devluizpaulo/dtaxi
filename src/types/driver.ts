@@ -12,6 +12,14 @@ export interface Driver {
   localizacao?: string;
   createdAt?: Date | { toDate(): Date };
   updatedAt?: Date | { toDate(): Date };
+  disponibilidade?: 'disponivel' | 'ocupado' | 'offline';
+  veiculo?: {
+    placa: string;
+  };
+  foto?: string;
+  corridasRealizadas?: number;
+  tempoOnline?: number;
+  ganhosDiarios?: number;
 }
 
 export interface DriverStats {

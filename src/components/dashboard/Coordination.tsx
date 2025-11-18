@@ -13,8 +13,7 @@ import DocumentosList from './coordination/DocumentosList';
 import ComunicadosList from './coordination/ComunicadosList';
 import DocumentoModal from './coordination/DocumentoModal';
 import ComunicadoModal from './coordination/ComunicadoModal';
-import ModelosDocumentosList from './coordination/ModelosDocumentosList';
-import { Coordenador, Documento, Comunicado, ModeloDocumento } from './coordination/types';
+import { Coordenador, Documento, Comunicado } from './coordination/types';
 import CoordenadorModal from './coordination/CoordenadorModal';
 import AtaFormModal from './coordination/AtaFormModal';
 import RelatorioOcorrenciaFormModal from './coordination/RelatorioOcorrenciaFormModal';
@@ -33,20 +32,6 @@ const tiposDocumento = [
   'Outro',
 ];
 
-const modelosProntos: ModeloDocumento[] = [
-  {
-    titulo: 'Portaria de Nomeação',
-    corpo: `PORTARIA Nº ___/____\n\nO Presidente da Comissão de Ética da [Instituição], no uso de suas atribuições, resolve:\n\nArt. 1º Nomear [NOME COMPLETO], para exercer a função de [FUNÇÃO], a partir de [DATA].\n\nArt. 2º Esta portaria entra em vigor na data de sua publicação.\n\n[Local], [Data].\n\nSr. Mauricio Alonso\nPresidente da Comissão de Ética`,
-  },
-  {
-    titulo: 'Portaria de Instauração de Processo',
-    corpo: `PORTARIA Nº ___/____\n\nO Presidente da Comissão de Ética da [Instituição], no uso de suas atribuições, resolve:\n\nArt. 1º Instaurar processo ético-disciplinar para apuração dos fatos constantes no relatório nº [NÚMERO], referente a [DESCRIÇÃO].\n\nArt. 2º Designar [NOME COMPLETO] como relator do processo.\n\nArt. 3º Esta portaria entra em vigor na data de sua publicação.\n\n[Local], [Data].\n\nSr. Mauricio Alonso\nPresidente da Comissão de Ética`,
-  },
-  {
-    titulo: 'Relatório de Ocorrência - D-Táxi',
-    corpo: `RELATÓRIO DE OCORRÊNCIA - D-TÁXI\n\nInformações Gerais:\nData e Hora do Incidente: [DATA_HORA]\nLocal do Incidente: [LOCAL]\nNúmero do Táxi (se aplicável): [TAXI]\nNome do Motorista: [MOTORISTA]\nDescrição do Incidente: [DESCRICAO]\n\nDetalhes do Incidente:\n[DETALHES]\n\nTestemunhas (se houver):\nNome: [TESTEMUNHA_NOME]\nContato: [TESTEMUNHA_CONTATO]\n\nAções Tomadas:\n[ACOES]\n\nComentários Adicionais:\n[COMENTARIOS]\n\nAssinatura do Responsável:\nNome: [RESPONSAVEL]\nData: [DATA_ASSINATURA]`
-  }
-];
 
 const Coordination = () => {
   const [activeTab, setActiveTab] = useState("coordenadores");
@@ -100,13 +85,51 @@ const Coordination = () => {
 
   // Handlers
   function imprimirPortaria(doc: Documento) {
+    // Se já existe um PDF gerado, manter o comportamento atual
     if (doc.pdfUrl) {
       window.open(doc.pdfUrl, '_blank');
-    } else if (doc.texto) {
+      return;
+    }
+
+    // Para Atas, usar um HTML mais elaborado (similar ao ataHtmlForPdf)
+    if (doc.tipo === 'Ata de Comissão de Ética' && doc.texto) {
+      const corpo = doc.texto.replace(/\n/g, '<br/>');
+      const html = `
+        <div style="font-family: Times New Roman, serif; font-size: 14pt; margin: 3cm 2cm 2cm 3cm; line-height: 1.5; color: #222; text-align: justify;">
+          <div style="text-align: center; font-weight: bold; font-size: 16pt; margin-bottom: 1.5em;">D-TAXI SP</div>
+          <div style="text-align: center; font-weight: bold; font-size: 15pt; margin-bottom: 1.5em; text-transform: uppercase;">ATA DA REUNIÃO DA COMISSÃO DE ÉTICA</div>
+          <div style="margin-bottom: 1em; white-space: normal;">${corpo}</div>
+        </div>
+      `;
+
+      const printWindow = window.open('', '', 'width=900,height=1200');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html><head><title>Ata da Comissão de Ética</title>
+          <style>
+            @media print {
+              body { margin: 0; }
+            }
+          </style>
+          </head><body>${html}</body></html>
+        `);
+        printWindow.document.close();
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+        }, 300);
+      }
+      return;
+    }
+
+    // Demais documentos: manter impressão simples baseada em texto
+    if (doc.texto) {
       const printWindow = window.open('', '', 'width=800,height=600');
-      printWindow!.document.write(`<pre style='font-family:monospace;font-size:16px;'>${doc.texto.replace(/\n/g, '<br>')}</pre>`);
-      printWindow!.document.close();
-      printWindow!.print();
+      if (printWindow) {
+        printWindow.document.write(`<pre style='font-family:monospace;font-size:16px;white-space:pre-wrap;'>${doc.texto}</pre>`);
+        printWindow.document.close();
+        printWindow.print();
+      }
     }
   }
   return (
@@ -126,7 +149,6 @@ const Coordination = () => {
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="comunicados">Comunicados</TabsTrigger>
           <TabsTrigger value="portarias">Portarias</TabsTrigger>
-          <TabsTrigger value="modelos-documentos">Modelos de Documentos</TabsTrigger>
           <TabsTrigger value="integracao">Integração</TabsTrigger>
         </TabsList>
         {/* Coordenadores */}
@@ -388,18 +410,6 @@ const Coordination = () => {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="modelos-documentos" className="space-y-4 px-1 sm:px-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>Modelos de Documentos</CardTitle>
-              <CardDescription>Selecione, edite e imprima modelos prontos de portaria ou relatório de ocorrência</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ModelosDocumentosList modelos={modelosProntos} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Nova aba de Integração */}
         <TabsContent value="integracao" className="space-y-4 px-1 sm:px-0">
           <Card>

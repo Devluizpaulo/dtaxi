@@ -67,7 +67,7 @@ const ActionButton = ({
   className = ""
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  onClick: () => void;
+  onClick: (event?: React.MouseEvent<HTMLButtonElement>) => void;
   tooltip: string;
   variant?: "ghost" | "outline";
   className?: string;
@@ -197,10 +197,31 @@ export default function TabelaMensagens({
                       </TableCell>
                       
                       <TableCell>
-                        <Badge className={cn("text-xs font-medium border", config.badgeColor)}>
-                          <span className="mr-1">{config.icon}</span>
-                          {msg.tipo}
-                        </Badge>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMigrar && onMigrar(msg);
+                              }}
+                              className="focus:outline-none"
+                            >
+                              <Badge
+                                className={cn(
+                                  "text-xs font-medium border cursor-pointer hover:shadow-sm transition-transform hover:scale-105",
+                                  config.badgeColor
+                                )}
+                              >
+                                <span className="mr-1">{config.icon}</span>
+                                {msg.tipo}
+                              </Badge>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Clique para mudar o tipo da mensagem
+                          </TooltipContent>
+                        </Tooltip>
                       </TableCell>
                       
                       <TableCell>

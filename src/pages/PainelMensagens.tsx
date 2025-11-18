@@ -385,7 +385,8 @@ const formatarData = (date: Date | { toDate: () => Date } | null | undefined): s
           mensagens={mensagens || []}
           onVisualizar={setMensagemSelecionada}
           onArquivar={categoria !== 'arquivadas' ? handleArquivar : undefined}
-          onMigrar={categoria !== 'arquivadas' ? handleMigrarPrompt : undefined}
+          // Clique no tipo agora apenas abre o modal para editar o tipo via select
+          onMigrar={categoria !== 'arquivadas' ? setMensagemSelecionada : undefined}
           onDesarquivar={categoria === 'arquivadas' ? handleDesarquivar : undefined}
         />
       )}
@@ -395,7 +396,8 @@ const formatarData = (date: Date | { toDate: () => Date } | null | undefined): s
         onClose={() => setMensagemSelecionada(null)}
         onMarcarResolvido={(resolucao) => mensagemSelecionada && handleMarcarResolvido(mensagemSelecionada, resolucao)}
         onArquivar={() => mensagemSelecionada && handleArquivar(mensagemSelecionada)}
-        onMigrar={() => mensagemSelecionada && handleMigrarPrompt(mensagemSelecionada)}
+        // Quando o select de tipo muda, migra a mensagem para a nova coleção
+        onMigrar={(novoTipo) => mensagemSelecionada && handleMigrar(mensagemSelecionada, novoTipo)}
         onImprimir={() => mensagemSelecionada && handleImprimir(mensagemSelecionada)}
       />
       {imprimir && (

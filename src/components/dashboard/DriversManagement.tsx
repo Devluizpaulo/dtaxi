@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Driver, DriverStats } from '@/types/driver';
 
 // Mock data for active drivers
 const activeDrivers = [
@@ -57,24 +58,32 @@ const DriversManagement = () => {
       const driversRef = collection(db, 'drivers');
       const q = query(driversRef, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
-      
-      const driversData = snapshot.docs.map(doc => ({
+
+      const driversData: Driver[] = snapshot.docs.map(doc => ({
         id: doc.id,
         avaliacao: Math.floor(Math.random() * 2) + 4, // 4-5 estrelas simulado
         corridasRealizadas: Math.floor(Math.random() * 500) + 50, // Simulado
         tempoOnline: Math.floor(Math.random() * 12) + 1, // horas simulado
         ganhosDiarios: Math.floor(Math.random() * 300) + 100, // R$ simulado
         ...doc.data()
-      }));
-      
+      } as Driver));
+
       setDrivers(driversData);
-      
-      // Calcular estatísticas
-      const avaliacaoMedia = driversData.reduce((acc, d) => acc + (d.avaliacao || 0), 0) / driversData.length;
-      const corridasTotal = driversData.reduce((acc, d) => acc + (d.corridasRealizadas || 0), 0);
-      
+
+      // Calcular estatísticas com tratamento para lista vazia
+      const totalDrivers = driversData.length;
+
+      const avaliacaoMedia = totalDrivers > 0
+        ? driversData.reduce((acc, d) => acc + (d.avaliacao || 0), 0) / totalDrivers
+        : 0;
+
+      const corridasTotal = driversData.reduce(
+        (acc, d) => acc + (d.corridasRealizadas || 0),
+        0
+      );
+
       const statsData = {
-        total: driversData.length,
+        total: totalDrivers,
         ativos: driversData.filter(d => d.status === 'ativo').length,
         pendentes: driversData.filter(d => d.status === 'pendente').length,
         inativos: driversData.filter(d => d.status === 'inativo').length,
@@ -83,7 +92,7 @@ const DriversManagement = () => {
         avaliacaoMedia: Math.round(avaliacaoMedia * 10) / 10,
         corridasTotal
       };
-      
+
       setStats(statsData);
     } catch (error) {
       console.error('Erro ao buscar motoristas:', error);
@@ -151,10 +160,6 @@ const DriversManagement = () => {
         )}
       />
     ));
-  };
-
-  const handleSelectDriver = (driver: Driver) => {
-    setSelectedDriver(driver);
   };
 
   return (
@@ -446,7 +451,19 @@ const DriversManagement = () => {
                           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                             <div className="flex items-center gap-1 text-xs text-gray-500">
                               <Clock className="h-3 w-3" />
-                              <span>{format(driver.createdAt?.toDate() || new Date(), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                              <span>
+                                {format(
+                                  (() => {
+                                    const createdAt = driver.createdAt;
+                                    if (createdAt && typeof createdAt === 'object' && 'toDate' in createdAt) {
+                                      return createdAt.toDate();
+                                    }
+                                    return createdAt instanceof Date ? createdAt : new Date();
+                                  })(),
+                                  'dd/MM/yyyy',
+                                  { locale: ptBR }
+                                )}
+                              </span>
                             </div>
                             <div className="flex items-center gap-1">
                               <div className={cn(

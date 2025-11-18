@@ -36,6 +36,17 @@ export function useMensagens(tipo: string) {
       const snap = await getDocs(q);
       const mensagensData = snap.docs.map(doc => {
         const data = doc.data() as any;
+
+        // Resolver tipo da mensagem: pode vir salvo como campo ou inferido pela coleção
+        const tipoMensagem = (data.tipo as Mensagem['tipo'])
+          || (data.messageType as Mensagem['tipo'])
+          || (tipo as Mensagem['tipo']);
+
+        // Resolver data de criação: pode ser dataCriacao, createdAt ou timestamp
+        const dataCriacao = data.dataCriacao
+          || data.createdAt
+          || data.timestamp;
+
         return { 
           ...data,
           id: doc.id,
@@ -45,7 +56,9 @@ export function useMensagens(tipo: string) {
           mensagem: data.mensagem || data.message || '',
           prefixo: data.prefixo || data.vehiclePrefix || '',
           assunto: data.assunto || data.subject || '',
-          politicaPrivacidade: data.politicaPrivacidade || data.privacyPolicy || false
+          politicaPrivacidade: data.politicaPrivacidade || data.privacyPolicy || false,
+          tipo: tipoMensagem,
+          dataCriacao,
         } as Mensagem;
       });
       

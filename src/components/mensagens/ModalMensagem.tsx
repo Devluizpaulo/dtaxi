@@ -31,10 +31,11 @@ export default function ModalMensagem({ mensagem, open, onClose, onMarcarResolvi
   onClose: () => void;
   onMarcarResolvido: (resolucao: string) => void;
   onArquivar: () => void;
-  onMigrar: () => void;
+  onMigrar: (novoTipo: Mensagem['tipo']) => void;
   onImprimir: () => void;
 }) {
   if (!mensagem) return null;
+  const tipos: Mensagem['tipo'][] = ['reclamacao', 'elogio', 'informacao', 'sugestao', 'duvida'];
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full p-0 sm:p-0">
@@ -114,11 +115,21 @@ export default function ModalMensagem({ mensagem, open, onClose, onMarcarResolvi
                 <CarTaxiFrontIcon className="w-5 h-5 text-gray-500" />
                 <span>Prefixo: <span className="font-mono">{mensagem.prefixo}</span></span>
               </div>
-              <div className="flex items-center gap-2 text-base">
+              <div className="flex items-center gap-2 text-base flex-wrap">
                 <Hash className="w-5 h-5 text-gray-500" />
                 <span>Tipo:</span>
-                <Badge className="ml-1 capitalize" variant="outline">{mensagem.tipo}</Badge>
-                <div className="flex items-center gap-2 text-base">
+                <select
+                  className="ml-1 text-xs sm:text-sm border rounded px-2 py-1 capitalize bg-white"
+                  value={mensagem.tipo}
+                  onChange={(e) => onMigrar(e.target.value as Mensagem['tipo'])}
+                >
+                  {tipos.map((t) => (
+                    <option key={t} value={t} className="capitalize">
+                      {t}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex items-center gap-2 text-base ml-auto">
                   <Calendar className="w-5 h-5 text-gray-500" />
                   <span>Data: {formatarData(mensagem.dataCriacao)}</span>
                 </div>

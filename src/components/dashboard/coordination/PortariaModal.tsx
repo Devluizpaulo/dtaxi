@@ -4,49 +4,38 @@ import { X } from 'lucide-react';
 import { Documento } from './types';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import 'quill-emoji/dist/quill-emoji.css';
-
-interface Portaria {
-  id?: string;
-  titulo: string;
-  descricao: string;
-  conteudo: string;
-  linkOrigem: string;
-}
 
 interface PortariaModalProps {
   open: boolean;
   onCancel: () => void;
-  onSave: (portaria: Partial<Portaria>) => Promise<void>;
-  portaria?: Portaria | null;
+  onSave: (portaria: Partial<Documento>) => Promise<void>;
+  portaria?: Documento | null;
   loading?: boolean;
 }
 
 const modules = {
   toolbar: [
-    [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+    [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
     ['bold', 'italic', 'underline', 'strike'],
-    [{ 'color': [] }, { 'background': [] }],
-    [{ 'align': [] }],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-    [{ 'indent': '-1'}, { 'indent': '+1' }],
+    [{ color: [] }, { background: [] }],
+    [{ align: [] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ indent: '-1' }, { indent: '+1' }],
     ['blockquote', 'code-block'],
     ['link', 'image', 'video'],
-    ['emoji'],
     ['clean'],
   ],
-  'emoji-toolbar': true,
-  'emoji-textarea': false,
-  'emoji-shortname': true,
 };
 
 const PortariaModal: React.FC<PortariaModalProps> = ({ open, onCancel, onSave, portaria, loading }) => {
-  const [fields, setFields] = useState<Portaria>({
+  const [fields, setFields] = useState<Partial<Documento>>({
     titulo: '',
     descricao: '',
     conteudo: '',
     linkOrigem: '',
+    data: '',
   });
+
   const [conteudo, setConteudo] = useState('');
 
   useEffect(() => {
@@ -55,7 +44,9 @@ const PortariaModal: React.FC<PortariaModalProps> = ({ open, onCancel, onSave, p
       descricao: portaria?.descricao || '',
       conteudo: portaria?.conteudo || '',
       linkOrigem: portaria?.linkOrigem || '',
+      data: portaria?.data || '',
     });
+
     setConteudo(portaria?.conteudo || '');
   }, [portaria, open]);
 
@@ -72,7 +63,7 @@ const PortariaModal: React.FC<PortariaModalProps> = ({ open, onCancel, onSave, p
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
-      <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-2xl relative animate-fadeIn overflow-y-auto max-h-[95vh]">
+      <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-3xl lg:max-w-4xl relative animate-fadeIn overflow-y-auto max-h-[95vh]">
         <button
           className="absolute top-3 right-3 text-gray-400 hover:text-red-500 focus:outline-none"
           onClick={onCancel}
@@ -91,6 +82,16 @@ const PortariaModal: React.FC<PortariaModalProps> = ({ open, onCancel, onSave, p
           <label className="block">
             <span className="text-sm font-semibold text-taxi-green">Descrição</span>
             <textarea name="descricao" value={fields.descricao} onChange={handleChange} required rows={2} className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition resize-none" />
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-taxi-green">Data de publicação</span>
+            <input
+              type="date"
+              name="data"
+              value={fields.data || ''}
+              onChange={handleChange}
+              className="mt-1 block w-full border-2 border-taxi-green/30 rounded-lg p-2 focus:ring-2 focus:ring-taxi-green focus:border-taxi-green transition"
+            />
           </label>
           <label className="block">
             <span className="text-sm font-semibold text-taxi-green">Conteúdo da Portaria</span>
